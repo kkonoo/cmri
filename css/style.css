@@ -20,6 +20,7 @@
   --navy: #0A1A33;            /* 첫 화면·푸터 바탕 (두 테마 공통) */
   --navy-2: #0D2547;
   --header-bg: #FFFFFF;
+  --logo-tile: transparent;   /* 어두운 화면에서는 로고 뒤에 흰 바탕 */
   --tint: #EEF3FC;            /* 글로컬랩 바탕 */
   --tint-line: #DCE6F7;
   --track: #C9D7F0;           /* 로드맵 선 */
@@ -43,6 +44,7 @@
     --accent: #6E9FFF; --accent-soft: #1B2945; --on-accent: #0B1220;
     --orange: #F5A93A; --orange-soft: #3A2A10; --orange-text: #F5B65C;
     --header-bg: #121926; --tint: #111A2B; --tint-line: #23314A; --track: #2B3B57;
+    --logo-tile: #FFFFFF;
     --glass: rgba(255, 255, 255, .04); --popup-shadow: 0 12px 32px rgba(0, 0, 0, .5); --shadow: none;
     --good: #4CC98A; --warn: #F2B544; --bad: #FF6B6F; --bad-soft: #3A1A1C; --seg: #1C2433;
     color-scheme: only dark;
@@ -54,6 +56,7 @@
   --accent: #6E9FFF; --accent-soft: #1B2945; --on-accent: #0B1220;
   --orange: #F5A93A; --orange-soft: #3A2A10; --orange-text: #F5B65C;
   --header-bg: #121926; --tint: #111A2B; --tint-line: #23314A; --track: #2B3B57;
+  --logo-tile: #FFFFFF;
   --glass: rgba(255, 255, 255, .04); --popup-shadow: 0 12px 32px rgba(0, 0, 0, .5); --shadow: none;
   --good: #4CC98A; --warn: #F2B544; --bad: #FF6B6F; --bad-soft: #3A1A1C; --seg: #1C2433;
   color-scheme: only dark;
@@ -90,11 +93,9 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--orange); outlin
 }
 .header-inner { display: flex; align-items: center; height: 72px; }
 .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
-.brand-mark {
-  background: var(--brand); color: #fff;
-  font-weight: 800; font-size: 15px; letter-spacing: .03em;
-  padding: 5px 9px 6px; border-radius: 8px;
-  box-shadow: inset 0 -3px 0 #F29B1D;
+.brand-logo {
+  display: block; width: auto; height: 40px; box-sizing: content-box;
+  margin-left: -6px; padding: 3px 6px; border-radius: 8px; background: var(--logo-tile);
 }
 .brand-text { line-height: 1.25; }
 .brand-text strong { display: block; font-size: 17px; font-weight: 700; letter-spacing: -.01em; }
@@ -602,6 +603,7 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--orange); outlin
   .wrap { padding-inline: 16px; }
   .copyright::before { left: 16px; right: 16px; }
   .brand { gap: 8px; }
+  .brand-logo { height: 34px; }
   .brand-text strong { font-size: 15.5px; }
   .brand-text small { font-size: 11.5px; }
   .header-tools { gap: 4px; }
