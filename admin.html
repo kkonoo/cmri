@@ -75,7 +75,7 @@
           <button class="btn-s primary" type="button" id="addFacultyBtn">한 명 추가</button>
         </div>
       </div>
-      <p class="hint">홈페이지 연구소 소개 → 연구진에 구분별로 가나다순으로 나와요. 아무도 없으면 ‘준비 중’ 안내가 보여요.</p>
+      <p class="hint">홈페이지 연구소 소개 → 연구진에 구분별로 나와요. 소장이 맨 앞, 나머지는 가나다순이에요. 아무도 없으면 ‘준비 중’ 안내가 보여요.</p>
       <table class="table">
         <thead><tr><th class="c-photo">사진</th><th>이름</th><th class="c-cat">구분</th><th>소속·직위</th></tr></thead>
         <tbody id="facultyRows"></tbody>
@@ -213,6 +213,7 @@
       <label class="field">연구 분야<input name="researchKo" maxlength="200"></label>
       <label class="field">영문 연구 분야<input name="researchEn" maxlength="300"></label>
     </div>
+    <label class="check"><input name="director" type="checkbox"> 소장 (연구진 맨 앞에 보여요)</label>
     <p class="hint">영문 칸을 비우면 영어 화면에도 한국어로 나와요. 이메일은 홈페이지에 공개돼요.</p>
     <div class="actions">
       <button class="btn-s danger" type="button" id="deleteFacultyBtn">삭제</button>

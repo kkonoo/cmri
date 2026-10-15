@@ -59,7 +59,7 @@ export function initFaculty({ db, fs, email, toast }) {
     $('#facultyRows').innerHTML = shown.length
       ? shown.map(p => `<tr data-id="${esc(p.id)}" tabindex="0">
           <td class="c-photo">${facultyPhoto(p)}</td>
-          <td>${esc(p.nameKo)}<small class="sub">${esc(p.nameEn || '')}</small></td>
+          <td>${esc(p.nameKo)}${p.director === true ? ' <span class="chip">소장</span>' : ''}<small class="sub">${esc(p.nameEn || '')}</small></td>
           <td>${ROLES[p.role]?.ko || ''}</td>
           <td>${esc([p.deptKo, p.positionKo].filter(Boolean).join(' '))}</td>
         </tr>`).join('')
@@ -77,6 +77,7 @@ export function initFaculty({ db, fs, email, toast }) {
     const f = form.elements;
     for (const k of FIELDS) f[k].value = p?.[k] || '';
     f.role.value = p?.role || 'faculty';
+    f.director.checked = p?.director === true;
     photo = p?.photo || '';
     showPhoto();
     $('#facultyDialogTitle').textContent = p ? '연구진 고치기' : '연구진 추가';
@@ -118,6 +119,7 @@ export function initFaculty({ db, fs, email, toast }) {
     const f = form.elements;
     const data = Object.fromEntries(FIELDS.map(k => [k, f[k].value.trim()]));
     data.email = data.email.toLowerCase();
+    data.director = f.director.checked;
     if (data.email && !isEmail(data.email)) {
       toast('이메일 주소를 확인해 주세요.');
       return;

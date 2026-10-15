@@ -33,7 +33,7 @@ service cloud.firestore {
       let d = request.resource.data;
       let photo = d.get('photo', '');
       return d.keys().hasOnly(['nameKo', 'nameEn', 'role', 'positionKo', 'positionEn', 'deptKo', 'deptEn',
-                               'researchKo', 'researchEn', 'email', 'photo', 'updatedAt', 'updatedBy'])
+                               'researchKo', 'researchEn', 'email', 'photo', 'director', 'updatedAt', 'updatedBy'])
         && d.nameKo is string && d.nameKo.size() > 0 && d.nameKo.size() <= 50
         && d.role in ['faculty', 'visiting', 'postdoc', 'researcher']
         && text(d.get('nameEn', ''), 100)
@@ -41,6 +41,7 @@ service cloud.firestore {
         && text(d.get('deptKo', ''), 100) && text(d.get('deptEn', ''), 200)
         && text(d.get('researchKo', ''), 200) && text(d.get('researchEn', ''), 300)
         && text(d.get('email', ''), 200)
+        && d.get('director', false) is bool
         // 사진은 관리자 화면에서 줄인 JPEG만
         && (photo == '' || (text(photo, 100000) && photo.matches('data:image/jpeg;base64,[A-Za-z0-9+/=]+')));
     }

@@ -1,4 +1,4 @@
-// 연구소 소개 → 연구진: 관리자가 넣은 연구진을 구분별로 가나다순으로 보여 줘요.
+// 연구소 소개 → 연구진: 관리자가 넣은 연구진을 구분별로 보여 줘요. 소장이 맨 앞, 나머지는 가나다순.
 // 아무도 없거나 불러오지 못하면 HTML에 있는 숫자와 안내가 그대로 보여요.
 import { enabled, firestore } from './firebase.js';
 import { bi, esc } from './posts.js';
@@ -10,7 +10,7 @@ export const ROLES = {
   researcher: { ko: '연구원', en: 'Researchers' },
 };
 
-export const sortFaculty = list => list.sort((a, b) => a.nameKo.localeCompare(b.nameKo, 'ko'));
+export const sortFaculty = list => list.sort((a, b) => (b.director === true) - (a.director === true) || a.nameKo.localeCompare(b.nameKo, 'ko'));
 export const photoOk = s => /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(s || '');
 
 // 영문 칸이 비어 있으면 영어 화면에도 한국어로 보여요
@@ -26,7 +26,7 @@ function card(p) {
   return `<li class="faculty-card">
     ${facultyPhoto(p)}
     <div>
-      <strong>${both(p.nameKo, p.nameEn)}</strong>${p.positionKo ? ` <small>${both(p.positionKo, p.positionEn)}</small>` : ''}
+      ${p.director === true ? `<span class="tag alt">${bi('소장', 'Director')}</span> ` : ''}<strong>${both(p.nameKo, p.nameEn)}</strong>${p.positionKo ? ` <small>${both(p.positionKo, p.positionEn)}</small>` : ''}
       ${p.deptKo ? `<p>${both(p.deptKo, p.deptEn)}</p>` : ''}
       ${p.researchKo ? `<p class="research">${both(p.researchKo, p.researchEn)}</p>` : ''}
       ${p.email ? `<a href="mailto:${esc(p.email)}">${esc(p.email)}</a>` : ''}
