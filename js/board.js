@@ -1,7 +1,7 @@
 // 게시판 목록(board.html)과 글 보기(post.html)
 import {
-  enabled, BOARDS, boardType, listPosts, pinnedPosts, getPost,
-  postItem, seminarItem, esc, dotDate, weekday, renderBody, safeUrl,
+  enabled, BOARDS, boardType, listPosts, pinnedPosts, getPost, MSG, bi,
+  postItem, seminarItem, letterCard, esc, dotDate, weekdayBi, renderBody, safeUrl,
 } from './posts.js';
 
 const PAGE = 20;
@@ -9,18 +9,21 @@ const params = new URLSearchParams(location.search);
 const type = boardType(params.get('type'));
 const label = BOARDS[type];
 const main = document.getElementById('content');
+const setTitle = (ko, en) => window.cmriSetTitle?.(`${ko} | 세포·기질연구소`, `${en} | Cell & Matrix Research Institute`);
+const msg = html => `<p class="msg">${html}</p>`;
+const backBtn = `<a class="back-btn" href="board.html?type=${type}">${bi('목록으로', 'Back to list')}</a>`;
 
-document.getElementById('pageTitle').textContent = label;
+document.getElementById('pageTitle').innerHTML = bi(label.ko, label.en);
 document.querySelectorAll('.tabs a').forEach(a => a.classList.toggle('on', a.dataset.type === type));
-document.title = `${label} | 세포·기질연구소`;
+setTitle(label.ko, label.en);
 
 const fail = err => {
   console.error(err);
-  main.innerHTML = '<p class="msg">글을 불러오지 못했어요. 잠시 후 다시 열어 주세요.</p>';
+  main.innerHTML = msg(MSG.failed);
 };
 
 if (!enabled) {
-  main.innerHTML = '<p class="msg">게시판은 Firebase를 연결하면 보여요.</p>';
+  main.innerHTML = msg(bi('게시판은 Firebase를 연결하면 보여요.', 'The board will appear once it is connected.'));
 } else if (document.body.dataset.page === 'board') {
   showBoard().catch(fail);
 } else {
@@ -29,19 +32,23 @@ if (!enabled) {
 
 async function showBoard() {
   const seminar = type === 'seminars';
-  const render = p => (seminar ? seminarItem(p, true) : postItem(type, p));
-  const [pinned, first] = await Promise.all([pinnedPosts(type), listPosts(type, PAGE)]);
+  const letters = type === 'newsletters';
+  const render = (p, i) => (seminar ? seminarItem(p, true) : letters ? letterCard(p, i) : postItem(type, p));
+  const [pinned, first] = await Promise.all([letters ? [] : pinnedPosts(type), listPosts(type, PAGE)]);
   if (!pinned.length && !first.posts.length) {
-    main.innerHTML = '<p class="msg">아직 올라온 글이 없어요.</p>';
+    main.innerHTML = msg(MSG.empty);
     return;
   }
-  main.innerHTML = `<ul class="${seminar ? 'seminar-list' : 'post-list'}"></ul>
-    <button class="more-btn" type="button" hidden>더 보기</button>`;
-  const list = main.querySelector('ul');
+  const listTag = letters ? 'div' : 'ul';
+  const listClass = seminar ? 'seminar-list' : letters ? 'letter-grid' : 'post-list';
+  main.innerHTML = `<${listTag} class="${listClass}"></${listTag}>
+    <button class="more-btn" type="button" hidden>${bi('더 보기', 'Load more')}</button>`;
+  const list = main.querySelector(`.${listClass}`);
   const more = main.querySelector('.more-btn');
   const pinnedIds = new Set(pinned.map(p => p.id));
+  let count = 0;
   const add = posts => list.insertAdjacentHTML('beforeend',
-    posts.filter(p => !pinnedIds.has(p.id)).map(render).join(''));
+    posts.filter(p => !pinnedIds.has(p.id)).map(p => render(p, count++)).join(''));
 
   list.innerHTML = pinned.map(p => (seminar ? render(p) : postItem(type, p, true))).join('');
   add(first.posts);
@@ -54,10 +61,10 @@ async function showBoard() {
       add(next.posts);
       last = next.last;
       more.hidden = next.posts.length < PAGE;
-      more.textContent = '더 보기';
+      more.innerHTML = bi('더 보기', 'Load more');
     } catch (err) {
       console.error(err);
-      more.textContent = '다시 시도';
+      more.innerHTML = bi('다시 시도', 'Try again');
     }
     more.disabled = false;
   });
@@ -67,22 +74,22 @@ async function showPost() {
   const id = params.get('id');
   const p = id && await getPost(type, id);
   if (!p) {
-    main.innerHTML = `<p class="msg">글을 찾을 수 없어요.</p><a class="back-btn" href="board.html?type=${type}">목록으로</a>`;
+    main.innerHTML = msg(bi('글을 찾을 수 없어요.', 'Post not found.')) + backBtn;
     return;
   }
-  document.title = `${p.title} | 세포·기질연구소`;
+  setTitle(p.title, p.title);
   const meta = type === 'seminars'
-    ? [['일시', `${dotDate(p.date)} (${weekday(p.date)}) ${p.time || ''}`.trim()],
-       ['연사', [p.speaker, p.affiliation].filter(Boolean).join(' · ')],
-       ['장소', p.place]]
-    : [['작성일', dotDate(p.date)]];
+    ? [[bi('일시', 'When'), `${dotDate(p.date)} (${weekdayBi(p.date)}) ${esc(p.time || '')}`.trim()],
+       [bi('연사', 'Speaker'), esc([p.speaker, p.affiliation].filter(Boolean).join(' · '))],
+       [bi('장소', 'Venue'), esc(p.place || '')]]
+    : [[bi('작성일', 'Date'), dotDate(p.date)]];
   const links = (p.links || []).filter(l => safeUrl(l.url));
   main.innerHTML = `<article class="article">
-    <p class="article-cat"><a href="board.html?type=${type}">${label}</a>${p.category ? `<span class="tag">${esc(p.category)}</span>` : ''}</p>
+    <p class="article-cat"><a href="board.html?type=${type}">${bi(label.ko, label.en)}</a>${p.category ? `<span class="tag">${esc(p.category)}</span>` : ''}</p>
     <h1>${esc(p.title)}</h1>
-    <dl class="article-meta">${meta.filter(([, v]) => v).map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
+    <dl class="article-meta">${meta.filter(([, v]) => v).map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>
     <div class="article-body">${renderBody(p.body)}</div>
     ${links.length ? `<ul class="attach">${links.map(l => `<li><a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label || l.url)}</a></li>`).join('')}</ul>` : ''}
-    <a class="back-btn" href="board.html?type=${type}">목록으로</a>
+    ${backBtn}
   </article>`;
 }

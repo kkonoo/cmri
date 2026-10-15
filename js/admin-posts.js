@@ -1,10 +1,12 @@
 // 관리자: 게시글 쓰기·고치기·삭제
 import { BOARDS, esc, dotDate, weekday, today } from './posts.js';
 
+// '규정'은 연구소 소개 → 운영 규정, '모집'은 프로그램 → 모집 공고에도 보여요
 const CATEGORIES = {
-  notices: ['공지', '모집', '채용', '행사', '수상', '기업지원'],
+  notices: ['공지', '모집', '채용', '행사', '수상', '기업지원', '규정'],
   seminars: [],
   news: ['언론 보도', '동정', '수상'],
+  newsletters: [],
 };
 const MAX_LINKS = 10;   // firestore.rules와 같게
 
@@ -51,9 +53,9 @@ export function initPosts(ctx) {
   function open(post) {
     editing = post?.id || null;
     form.reset();
-    $('#postDialogTitle').textContent = `${BOARDS[board]} · ${post ? '글 고치기' : '새 글'}`;
-    dialog.querySelectorAll('[data-only]').forEach(el => (el.hidden = el.dataset.only !== board));
-    dialog.querySelectorAll('[data-not]').forEach(el => (el.hidden = el.dataset.not === board));
+    $('#postDialogTitle').textContent = `${BOARDS[board].ko} · ${post ? '글 고치기' : '새 글'}`;
+    dialog.querySelectorAll('[data-only]').forEach(el => (el.hidden = !el.dataset.only.split(' ').includes(board)));
+    dialog.querySelectorAll('[data-not]').forEach(el => (el.hidden = el.dataset.not.split(' ').includes(board)));
     $('#categoryList').innerHTML = CATEGORIES[board].map(c => `<option value="${c}">`).join('');
     const p = post || { date: today() };
     for (const k of ['title', 'category', 'date', 'body', 'time', 'speaker', 'affiliation', 'place']) f[k].value = p[k] || '';
@@ -97,7 +99,7 @@ export function initPosts(ctx) {
     }
     const data = {
       title: f.title.value.trim(),
-      category: board === 'seminars' ? '' : f.category.value.trim(),
+      category: CATEGORIES[board].length ? f.category.value.trim() : '',
       date: f.date.value,
       body: f.body.value.trim(),
       links,
