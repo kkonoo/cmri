@@ -3,6 +3,7 @@ import { enabled, auth, firestore } from './firebase.js';
 import { esc } from './posts.js';
 import { initPosts } from './admin-posts.js';
 import { initMail } from './admin-mail.js';
+import { initFaculty } from './admin-faculty.js';
 
 const $ = s => document.querySelector(s);
 const gate = $('#gate');
@@ -87,6 +88,7 @@ async function start() {
     const ctx = { db, fs, email, toast, openTab };
     initMail(ctx);   // ctx.composeMail을 만들어 둬요
     initPosts(ctx);
+    initFaculty(ctx);
     initAdmins(ctx);
   });
 }

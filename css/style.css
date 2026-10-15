@@ -512,6 +512,18 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--orange); outlin
 .person strong { display: block; font-size: 20px; }
 .person p { margin: 2px 0 0; color: var(--muted); font-size: 14.5px; }
 
+.faculty { margin-top: 48px; }
+.faculty-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; list-style: none; margin: 0 0 40px; padding: 0; }
+.faculty-grid:last-child { margin-bottom: 0; }
+.faculty-card { display: grid; grid-template-columns: 60px minmax(0, 1fr); gap: 14px; align-items: start; padding: 16px; border-radius: 14px; background: var(--surface); }
+.faculty-card strong { font-size: 16.5px; }
+.faculty-card small { font-size: 13.5px; color: var(--muted); }
+.faculty-card p { margin: 3px 0 0; font-size: 14px; }
+.faculty-card .research { color: var(--muted); }
+.faculty-card a { display: inline-block; margin-top: 4px; font-size: 13.5px; color: var(--accent); word-break: break-all; }
+.faculty-photo { display: grid; place-items: center; width: 60px; height: 80px; overflow: hidden; border-radius: 10px; background: var(--accent-soft); color: var(--accent); font-size: 22px; font-weight: 800; }
+.faculty-photo img { width: 100%; height: 100%; object-fit: cover; }
+
 .org { display: grid; justify-items: center; gap: 0; }
 .org-top { padding: 14px 32px; border-radius: 14px; background: var(--navy); color: #fff; text-align: center; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12); }
 .org-top small { display: block; font-size: 13px; color: #F29B1D; font-weight: 700; }
@@ -564,6 +576,7 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--orange); outlin
   .board-grid, .about-grid, .glocal-head { grid-template-columns: 1fr; }
   .about-grid { gap: 40px; }
   .axis-grid, .cols-3 { grid-template-columns: 1fr; gap: 12px; }
+  .faculty-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .stats { grid-template-columns: 1fr 1fr; margin-top: 56px; }
   .stats > div, .stats > div + div { padding: 20px 0 16px; border-left: 0; }
   .stats > div:nth-child(even) { padding-left: 20px; border-left: 1px solid rgba(255, 255, 255, .14); }
@@ -614,5 +627,6 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--orange); outlin
   .partners div { flex-direction: column; gap: 0; }
   .figures dd { font-size: 22px; }
   .person { grid-template-columns: 1fr; }
+  .faculty-grid { grid-template-columns: 1fr; }
   .contact-list div { grid-template-columns: 1fr; gap: 0; }
 }

@@ -40,6 +40,7 @@
   <div id="app" hidden>
     <nav class="seg admin-tabs" aria-label="관리 메뉴">
       <button type="button" data-tab="posts" class="on">게시글</button>
+      <button type="button" data-tab="faculty">연구진</button>
       <button type="button" data-tab="mail">메일 보내기</button>
       <button type="button" data-tab="people">받는 사람</button>
       <button type="button" data-tab="admins">관리자</button>
@@ -59,6 +60,25 @@
       <table class="table">
         <thead><tr><th class="c-date">날짜</th><th class="c-cat">분류</th><th>제목</th></tr></thead>
         <tbody id="postRows"></tbody>
+      </table>
+    </section>
+
+    <!-- 연구진 -->
+    <section class="tab-panel" data-panel="faculty" hidden>
+      <div class="toolbar">
+        <div class="filters">
+          <select id="facultyFilter" aria-label="구분"></select>
+          <input id="facultySearch" type="search" placeholder="이름·소속 찾기" aria-label="찾기">
+        </div>
+        <div class="actions">
+          <button class="btn-s" type="button" id="facultyImportBtn">엑셀에서 붙여 넣기</button>
+          <button class="btn-s primary" type="button" id="addFacultyBtn">한 명 추가</button>
+        </div>
+      </div>
+      <p class="hint">홈페이지 연구소 소개 → 연구진에 구분별로 가나다순으로 나와요. 아무도 없으면 ‘준비 중’ 안내가 보여요.</p>
+      <table class="table">
+        <thead><tr><th class="c-photo">사진</th><th>이름</th><th class="c-cat">구분</th><th>소속·직위</th></tr></thead>
+        <tbody id="facultyRows"></tbody>
       </table>
     </section>
 
@@ -158,6 +178,62 @@
       <span class="spacer"></span>
       <button class="btn-s" value="cancel" formnovalidate>취소</button>
       <button class="btn-s primary" type="submit" value="save">저장</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- 연구진 추가·고치기 -->
+<dialog id="facultyDialog" class="wide">
+  <form method="dialog" id="facultyForm">
+    <h2 id="facultyDialogTitle">연구진</h2>
+    <div class="photo-field">
+      <div id="facultyPhoto"></div>
+      <div>
+        <div class="actions">
+          <label class="btn-s">사진 고르기<input type="file" accept="image/*" id="facultyPhotoInput" hidden></label>
+          <button class="btn-s danger" type="button" id="facultyPhotoRemove">사진 빼기</button>
+        </div>
+        <p class="hint">세로 3:4로 잘라 작게 줄여 저장해요.</p>
+      </div>
+    </div>
+    <div class="grid-2">
+      <label class="field">이름<input name="nameKo" required maxlength="50"></label>
+      <label class="field">영문 이름<input name="nameEn" maxlength="100" placeholder="Gil-Dong Hong"></label>
+      <label class="field">구분<select name="role">
+        <option value="faculty">참여교수</option>
+        <option value="visiting">연구초빙교수</option>
+        <option value="postdoc">박사후연구원</option>
+        <option value="researcher">연구원</option>
+      </select></label>
+      <label class="field">이메일<input name="email" type="email" maxlength="200"></label>
+      <label class="field">직위<input name="positionKo" maxlength="50" placeholder="교수"></label>
+      <label class="field">영문 직위<input name="positionEn" maxlength="100" placeholder="Professor"></label>
+      <label class="field">소속<input name="deptKo" maxlength="100" placeholder="의과대학 의과학과"></label>
+      <label class="field">영문 소속<input name="deptEn" maxlength="200" placeholder="Department of Biomedical Science"></label>
+      <label class="field">연구 분야<input name="researchKo" maxlength="200"></label>
+      <label class="field">영문 연구 분야<input name="researchEn" maxlength="300"></label>
+    </div>
+    <p class="hint">영문 칸을 비우면 영어 화면에도 한국어로 나와요. 이메일은 홈페이지에 공개돼요.</p>
+    <div class="actions">
+      <button class="btn-s danger" type="button" id="deleteFacultyBtn">삭제</button>
+      <span class="spacer"></span>
+      <button class="btn-s" value="cancel" formnovalidate>취소</button>
+      <button class="btn-s primary" type="submit" value="save">저장</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- 연구진 엑셀에서 붙여 넣기 -->
+<dialog id="facultyImportDialog" class="wide">
+  <form method="dialog" id="facultyImportForm">
+    <h2>연구진 엑셀에서 붙여 넣기</h2>
+    <p class="hint">엑셀에서 <b>이름 · 영문 이름 · 구분 · 직위 · 소속 · 이메일</b> 순서의 열을 복사해 붙여 넣어요. 구분에는 참여교수·연구초빙교수·박사후연구원·연구원 중 하나를 써요(비우면 참여교수). 이름과 구분이 같은 사람은 빈 칸이 아닌 값만 고쳐요.</p>
+    <textarea name="rows" rows="10" placeholder="홍길동	Gil-Dong Hong	참여교수	교수	의과대학 의과학과	hong@knu.ac.kr"></textarea>
+    <p class="hint" id="facultyImportPreview">붙여 넣으면 몇 명인지 알려 드려요.</p>
+    <div class="actions">
+      <span class="spacer"></span>
+      <button class="btn-s" value="cancel" formnovalidate>취소</button>
+      <button class="btn-s primary" type="submit" value="save">가져오기</button>
     </div>
   </form>
 </dialog>
