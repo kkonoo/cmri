@@ -18,6 +18,7 @@ const MSG = {
   sent: bi('로그인 링크를 보냈어요. 메일의 링크를 누르면 이 화면으로 돌아와요. 메일이 보이지 않으면 스팸함을 확인해 주세요.',
     'We’ve sent a sign-in link. Click the link in the email to come back to this page. If you don’t see it, check your spam folder.'),
   sendFailed: bi('로그인 링크를 보내지 못했어요. 주소를 확인하고 다시 시도해 주세요.', 'We couldn’t send the sign-in link. Please check the address and try again.'),
+  notReady: bi('학교 메일 로그인이 아직 준비되지 않았어요. 행정실로 문의해 주세요.', 'KNU email sign-in isn’t available yet. Please contact the administrative office.'),
   confirmEmail: bi('링크를 받은 메일 주소를 한 번 더 넣어 주세요.', 'Please enter the email address the link was sent to.'),
   expired: bi('로그인 링크가 만료되었거나 이미 쓰였어요. 링크를 다시 받아 주세요.', 'This sign-in link has expired or has already been used. Please request a new one.'),
   notKnu: bi('학교 메일(@knu.ac.kr)로 로그인해야 신청할 수 있어요.', 'Please sign in with your KNU email (@knu.ac.kr) to apply.'),
@@ -96,7 +97,9 @@ async function start() {
       say($('#loginMsg'), MSG.sent, 'ok');
     } catch (err) {
       console.error(err);
-      say($('#loginMsg'), MSG.sendFailed, 'bad');
+      // 콘솔에서 이메일 링크 로그인을 켜지 않았거나 도메인이 승인되지 않은 경우 (README 처음 설정 3)
+      const setup = ['auth/operation-not-allowed', 'auth/unauthorized-continue-uri', 'auth/unauthorized-domain', 'auth/admin-restricted-operation'].includes(err.code);
+      say($('#loginMsg'), setup ? MSG.notReady : MSG.sendFailed, 'bad');
     }
     button.disabled = false;
   });
