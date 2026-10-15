@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>관리자 | 세포·기질연구소</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin">
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="index.html">
+      <span class="brand-mark">CMRI</span>
+      <span class="brand-text"><strong>세포·기질연구소</strong><small>관리자</small></span>
+    </a>
+    <div class="account" id="account" hidden>
+      <span id="accountEmail"></span>
+      <button class="btn-s" type="button" id="logoutBtn">로그아웃</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap admin-main">
+
+  <section class="gate" id="gate">
+    <p class="msg">불러오는 중…</p>
+  </section>
+
+  <div id="app" hidden>
+    <nav class="seg admin-tabs" aria-label="관리 메뉴">
+      <button type="button" data-tab="posts" class="on">게시글</button>
+      <button type="button" data-tab="mail">메일 보내기</button>
+      <button type="button" data-tab="people">받는 사람</button>
+      <button type="button" data-tab="admins">관리자</button>
+    </nav>
+
+    <!-- 게시글 -->
+    <section class="tab-panel" data-panel="posts">
+      <div class="toolbar">
+        <div class="seg" id="boardSeg">
+          <button type="button" data-board="notices" class="on">공지사항</button>
+          <button type="button" data-board="seminars">세미나</button>
+          <button type="button" data-board="news">연구소 소식</button>
+        </div>
+        <button class="btn-s primary" type="button" id="newPostBtn">새 글 쓰기</button>
+      </div>
+      <table class="table">
+        <thead><tr><th class="c-date">날짜</th><th class="c-cat">분류</th><th>제목</th></tr></thead>
+        <tbody id="postRows"></tbody>
+      </table>
+    </section>
+
+    <!-- 메일 보내기 -->
+    <section class="tab-panel" data-panel="mail" hidden>
+      <form class="panel-box" id="mailForm">
+        <h2>메일 쓰기</h2>
+        <p class="hint">cmri@knu.ac.kr 이름으로 보내져요. 받는 사람끼리는 서로 주소가 보이지 않아요.</p>
+        <fieldset class="field">
+          <legend>받는 그룹</legend>
+          <div class="group-checks" id="groupChecks"></div>
+          <p class="hint" id="recipientCount">받는 사람 0명</p>
+        </fieldset>
+        <label class="field">제목<input name="subject" required maxlength="200"></label>
+        <label class="field">내용<textarea name="text" rows="12" required></textarea></label>
+        <p class="hint">빈 줄로 문단을 나눠요. 주소를 쓰면 링크가 돼요.</p>
+        <div class="actions">
+          <button class="btn-s" type="button" id="testMailBtn">나에게 먼저 보내기</button>
+          <button class="btn-s primary" type="submit">보내기</button>
+        </div>
+      </form>
+
+      <div class="panel-box">
+        <div class="box-head">
+          <h2>보낸 기록</h2>
+          <button class="btn-s" type="button" id="refreshLogBtn">새로 고침</button>
+        </div>
+        <table class="table">
+          <thead><tr><th class="c-date">보낸 때</th><th>제목</th><th class="c-num">받는 사람</th><th class="c-state">결과</th></tr></thead>
+          <tbody id="logRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 받는 사람 -->
+    <section class="tab-panel" data-panel="people" hidden>
+      <div class="toolbar">
+        <div class="filters">
+          <select id="groupFilter" aria-label="그룹"></select>
+          <input id="peopleSearch" type="search" placeholder="이름·이메일 찾기" aria-label="찾기">
+        </div>
+        <div class="actions">
+          <button class="btn-s" type="button" id="importBtn">엑셀에서 붙여 넣기</button>
+          <button class="btn-s primary" type="button" id="addPersonBtn">한 명 추가</button>
+        </div>
+      </div>
+      <p class="hint">명단은 관리자만 볼 수 있어요. 홈페이지에는 나오지 않아요.</p>
+      <table class="table">
+        <thead><tr><th>이름</th><th>이메일</th><th>그룹</th></tr></thead>
+        <tbody id="peopleRows"></tbody>
+      </table>
+    </section>
+
+    <!-- 관리자 -->
+    <section class="tab-panel" data-panel="admins" hidden>
+      <form class="panel-box" id="adminForm">
+        <h2>관리자</h2>
+        <p class="hint">추가한 사람은 그 구글 계정으로 로그인하면 바로 관리할 수 있어요.</p>
+        <ul class="admin-list" id="adminList"></ul>
+        <div class="inline-form">
+          <input name="email" type="email" required placeholder="구글 계정 이메일" aria-label="추가할 관리자 이메일">
+          <button class="btn-s primary" type="submit">추가</button>
+        </div>
+      </form>
+    </section>
+  </div>
+</main>
+
+<!-- 글 쓰기·고치기 -->
+<dialog id="postDialog" class="wide">
+  <form method="dialog" id="postForm">
+    <h2 id="postDialogTitle">새 글</h2>
+    <div class="grid-2">
+      <label class="field" data-not="seminars">분류<input name="category" list="categoryList" maxlength="20"></label>
+      <label class="field">날짜<input name="date" type="date" required></label>
+      <label class="field" data-only="seminars">시간<input name="time" placeholder="16:00" maxlength="20"></label>
+    </div>
+    <datalist id="categoryList"></datalist>
+    <label class="field"><span data-only="seminars">강연 제목</span><span data-not="seminars">제목</span><input name="title" required maxlength="200"></label>
+    <div class="grid-2" data-only="seminars">
+      <label class="field">연사<input name="speaker" placeholder="홍길동 교수" maxlength="100"></label>
+      <label class="field">소속<input name="affiliation" maxlength="100"></label>
+      <label class="field">장소<input name="place" maxlength="100"></label>
+    </div>
+    <label class="field">내용<textarea name="body" rows="10"></textarea></label>
+    <p class="hint">빈 줄로 문단을 나눠요. 주소를 쓰면 링크가 돼요.</p>
+    <fieldset class="field">
+      <legend>첨부 링크</legend>
+      <div id="linkRows"></div>
+      <button class="btn-s" type="button" id="addLinkBtn">링크 추가</button>
+      <p class="hint">파일은 구글 드라이브에 올리고 공유 링크를 붙여 주세요.</p>
+    </fieldset>
+    <label class="check" data-only="notices"><input name="pinned" type="checkbox"> 목록 맨 위에 고정</label>
+    <div class="actions">
+      <button class="btn-s danger" type="button" id="deletePostBtn">삭제</button>
+      <button class="btn-s" type="button" id="mailPostBtn">이 글을 메일로 보내기</button>
+      <span class="spacer"></span>
+      <button class="btn-s" value="cancel" formnovalidate>취소</button>
+      <button class="btn-s primary" type="submit" value="save">저장</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- 받는 사람 추가·고치기 -->
+<dialog id="personDialog">
+  <form method="dialog" id="personForm">
+    <h2 id="personDialogTitle">받는 사람</h2>
+    <label class="field">이름<input name="name" maxlength="50"></label>
+    <label class="field">이메일<input name="email" type="email" required maxlength="200"></label>
+    <label class="field">그룹<input name="groups" placeholder="구성원, 참여 학생" maxlength="200"></label>
+    <p class="hint">여러 그룹이면 쉼표로 나눠요.</p>
+    <div class="actions">
+      <button class="btn-s danger" type="button" id="deletePersonBtn">삭제</button>
+      <span class="spacer"></span>
+      <button class="btn-s" value="cancel" formnovalidate>취소</button>
+      <button class="btn-s primary" type="submit" value="save">저장</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- 엑셀에서 붙여 넣기 -->
+<dialog id="importDialog" class="wide">
+  <form method="dialog" id="importForm">
+    <h2>엑셀에서 붙여 넣기</h2>
+    <p class="hint">엑셀에서 <b>이름 · 이메일 · 그룹</b> 열을 복사해 붙여 넣어요. 이미 있는 이메일은 그룹이 더해져요.</p>
+    <textarea name="rows" rows="10" placeholder="홍길동	hong@knu.ac.kr	구성원"></textarea>
+    <label class="field">그룹 열이 없을 때 넣을 그룹<input name="defaultGroup" placeholder="참여 학생" maxlength="50"></label>
+    <p class="hint" id="importPreview">붙여 넣으면 몇 명인지 알려 드려요.</p>
+    <div class="actions">
+      <span class="spacer"></span>
+      <button class="btn-s" value="cancel" formnovalidate>취소</button>
+      <button class="btn-s primary" type="submit" value="save">가져오기</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script type="module" src="js/admin.js"></script>
+</body>
+</html>

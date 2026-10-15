@@ -1,31 +1,100 @@
 # 경북대학교 세포·기질연구소 홈페이지 리뉴얼
 
-기존 홈페이지(cmri.knu.ac.kr)를 GitHub Pages용으로 새로 만드는 작업이에요. 지금은 **메인 페이지 시안**만 있어요.
+기존 홈페이지(cmri.knu.ac.kr)를 GitHub Pages용으로 새로 만드는 작업이에요. 관리자가 공지·세미나·소식을 올리고, cmri@knu.ac.kr 이름으로 구성원에게 메일을 보낼 수 있어요.
 
-주소: https://kkonoo.github.io/cmri/ (GitHub Pages를 켠 뒤)
+- 홈페이지: https://kkonoo.github.io/cmri/
+- 관리자: https://kkonoo.github.io/cmri/admin.html
 
-## 시안 보는 법
+## 하는 일
 
-- `index.html`을 브라우저로 열면 바로 보여요.
-- GitHub Pages: 저장소 Settings → Pages → Branch에서 이 브랜치(또는 main)를 고르면 위 주소로 열려요.
-
-## 내용 출처
-
-| 영역 | 출처 |
+| 화면 | 하는 일 |
 | --- | --- |
-| 공지·세미나·연구소 소식·장비·교육 프로그램 | 기존 홈페이지 (`old/` 스크린샷) |
-| 글로컬랩·핵심과제·실적·연혁·연구 지원 제도 | 2026 글로컬랩 계획서와 발표 자료 |
-| 송년심포지엄 사진 | 발표 자료에서 잘라 냄 |
+| 메인 (`index.html`) | 연구소 소개, 글로컬랩, 프로그램, 연구 지원. 공지·세미나·소식은 관리자가 올린 최신 글을 보여 줘요 |
+| 게시판 (`board.html`, `post.html`) | 공지사항·세미나·연구소 소식 목록과 글 보기 |
+| 관리자 → 게시글 | 글 쓰기·고치기·삭제, 공지 고정, 첨부 링크, 세미나 일시·장소·연사 |
+| 관리자 → 받는 사람 | 메일 명단. 엑셀에서 붙여 넣기, 그룹(구성원·참여 학생 등) |
+| 관리자 → 메일 보내기 | 그룹을 골라 cmri@knu.ac.kr 이름으로 발송, 나에게 먼저 보내기, 보낸 기록과 실패 확인 |
+| 관리자 → 관리자 | 관리자 추가·빼기 (구글 계정) |
 
-링크는 아직 대부분 `#`이에요. 하위 페이지와 관리자 페이지는 다음 단계예요.
+Firebase를 연결하기 전에는 메인에 예시 글이 보이고, 게시판·관리자 화면은 설정 안내만 보여요.
+
+## 처음 설정 (한 번만)
+
+### 1. Firebase 프로젝트
+
+1. https://console.firebase.google.com 에서 **프로젝트 추가** (예: `cmri-knu`). 애널리틱스는 꺼도 돼요.
+2. 프로젝트 설정 → 내 앱 → **웹 앱 추가(`</>`)**. 나온 `firebaseConfig` 값을 [`js/firebase-config.js`](js/firebase-config.js)의 `null` 자리에 붙여 넣어요.
+3. **Authentication** → 시작하기 → 로그인 방법에서 **Google** 사용. 설정 → 승인된 도메인에 `kkonoo.github.io` 추가.
+4. **Firestore Database** → 데이터베이스 만들기 → 위치 **asia-northeast3 (서울)**, 프로덕션 모드.
+5. Firestore → 규칙 탭에 [`firestore.rules`](firestore.rules) 내용을 그대로 붙여 넣고 **게시**.
+6. 첫 관리자 등록: Firestore → 데이터 → 컬렉션 시작 `admins` → 문서 ID에 관리자 구글 이메일(소문자, 예: `hong@gmail.com`) → 필드 아무거나 하나(예: `name` = 홍길동). 나머지 관리자는 관리자 페이지 → 관리자 탭에서 추가하면 돼요.
+
+### 2. 메일 발송 (cmri@knu.ac.kr)
+
+학교 메일 비밀번호는 브라우저에 둘 수 없어서, Firebase의 **Trigger Email** 확장 프로그램이 대신 학교 메일 서버(`msvr.knu.ac.kr:465`)로 보내요.
+
+1. 요금제를 **Blaze(종량제)** 로 바꿔요 (프로젝트 개요 → 업그레이드, 결제 카드 등록). 이 정도 사용량은 무료 한도 안이라 보통 청구되지 않아요. Google Cloud 콘솔 → 결제 → **예산 및 알림**에서 월 1만 원 같은 알림을 걸어 두면 안심이에요.
+2. Firebase → Extensions → **Trigger Email from Firestore** 설치. 설정값:
+
+   | 항목 | 값 |
+   | --- | --- |
+   | Cloud Functions location | `asia-northeast3` (서울) |
+   | Authentication Type | `UsernamePassword` |
+   | SMTP connection URI | `smtps://cmri%40knu.ac.kr@msvr.knu.ac.kr:465` |
+   | SMTP password | cmri@knu.ac.kr 비밀번호 |
+   | Email documents collection | `mail` |
+   | Default FROM address | `경북대학교 세포·기질연구소 <cmri@knu.ac.kr>` |
+
+   나머지(Reply-To, Users·Templates collection 등)는 비워 둬요. 확장 프로그램 버전에 따라 항목 이름이 조금 다를 수 있어요.
+3. 관리자 페이지 → 메일 보내기 → **나에게 먼저 보내기**로 시험해요. 보낸 기록에 ‘1명 보냄’이 뜨면 끝이에요.
+
+알아 둘 것
+
+- 받는 사람끼리 주소가 보이지 않게 숨은참조 50명씩 나눠 보내요. 받는 주소는 cmri@knu.ac.kr이라 보낸 메일이 학교 메일함에도 한 통씩 남아요.
+- cmri@knu.ac.kr 비밀번호를 바꾸면 확장 프로그램 설정의 SMTP password도 바꿔야 해요.
+- 보낸 기록이 10분 넘게 ‘보내는 중’이면 확장 프로그램 설정이나 학교 메일 서버의 하루 발송 제한을 확인해 주세요.
+
+### 3. GitHub Pages
+
+저장소 Settings → Pages → Source: Deploy from a branch → `main` / `(root)`.
+
+## 데이터는 어디에
+
+모두 Firestore에 있고, 누가 읽고 쓸 수 있는지는 [`firestore.rules`](firestore.rules)가 정해요.
+
+| 컬렉션 | 내용 | 읽기 | 쓰기 |
+| --- | --- | --- | --- |
+| `notices`, `seminars`, `news` | 게시글 | 누구나 | 관리자 |
+| `recipients` | 메일 명단 (문서 ID = 이메일) | 관리자 | 관리자 |
+| `admins` | 관리자 (문서 ID = 이메일) | 관리자 | 관리자 |
+| `campaigns` | 보낸 메일 기록 | 관리자 | 관리자 |
+| `mail` | 확장 프로그램이 보낼 메일 | 관리자 | 관리자 (보내는 주소는 못 바꿈, 한 통 50명까지) |
 
 ## 파일
 
 | 파일 | 내용 |
 | --- | --- |
-| `index.html` | 메인 페이지 시안 |
-| `css/style.css` | 스타일 (색·간격 토큰은 맨 위 `:root`) |
-| `js/main.js` | 모바일 메뉴 열고 닫기 |
-| `img/hero-matrix.svg` | 첫 화면 배경 그림 |
-| `img/symposium-2025.jpg` | 2025 송년심포지엄 사진 |
+| `index.html` | 메인 |
+| `board.html`, `post.html` | 게시판 목록, 글 보기 |
+| `admin.html` | 관리자 |
+| `css/style.css` | 공통 스타일 (색·간격 토큰은 맨 위 `:root`) |
+| `css/admin.css` | 관리자 화면 스타일 |
+| `js/main.js` | 모바일 메뉴 |
+| `js/firebase-config.js` | Firebase 설정값 (처음 설정 1-2) |
+| `js/firebase.js` | Firebase SDK 불러오기 |
+| `js/posts.js` | 게시글 불러오기·그리기 공통 |
+| `js/home.js`, `js/board.js` | 메인 최신 글, 게시판·글 보기 |
+| `js/admin.js` | 관리자 로그인·탭·관리자 목록 |
+| `js/admin-posts.js` | 게시글 관리 |
+| `js/admin-mail.js` | 받는 사람 명단, 메일 보내기, 보낸 기록 |
+| `firestore.rules` | Firestore 보안 규칙 |
+| `img/` | 첫 화면 그림, 송년심포지엄 사진 |
 | `old/` | 기존 홈페이지 스크린샷 (참고용) |
+
+## 내용 출처
+
+| 영역 | 출처 |
+| --- | --- |
+| 예시 공지·세미나·소식, 장비, 교육 프로그램 | 기존 홈페이지 (`old/` 스크린샷) |
+| 글로컬랩·핵심과제·실적·연혁·연구 지원 제도 | 2026 글로컬랩 계획서와 발표 자료 |
+| 송년심포지엄 사진 | 발표 자료에서 잘라 냄 |

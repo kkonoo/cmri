@@ -1,0 +1,103 @@
+/* 관리자 페이지 — style.css의 토큰을 그대로 써요 */
+
+body.admin { background: var(--surface-2); min-height: 100vh; }
+.admin-main { padding-top: 28px; padding-bottom: 80px; }
+.account { display: flex; align-items: center; gap: 12px; font-size: 14px; color: var(--muted); }
+
+.btn-s {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: 38px; padding: 0 16px; border: 1px solid var(--line); border-radius: 9px;
+  background: #fff; color: var(--text); font: inherit; font-size: 14.5px; font-weight: 600;
+  white-space: nowrap; cursor: pointer;
+}
+.btn-s:hover { border-color: var(--accent); color: var(--accent); }
+.btn-s.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn-s.primary:hover { filter: brightness(1.08); color: #fff; }
+.btn-s.danger { border-color: transparent; background: transparent; color: #D93036; }
+.btn-s.danger:hover { background: #FDECEC; }
+.btn-s.big { height: 48px; padding: 0 24px; font-size: 16px; }
+.btn-s:disabled { opacity: .5; cursor: default; }
+
+.gate-box { max-width: 480px; margin: 64px auto; padding: 40px 32px; text-align: center; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); }
+.gate-box h1 { margin: 0 0 12px; font-size: 22px; }
+.gate-box p { margin: 0 0 24px; color: var(--muted); }
+
+.seg { display: inline-flex; gap: 2px; padding: 4px; border-radius: 12px; background: #E8ECF2; }
+.seg button { height: 36px; padding: 0 16px; border: 0; border-radius: 9px; background: transparent; font: inherit; font-size: 14.5px; font-weight: 600; color: var(--muted); cursor: pointer; }
+.seg button.on { background: #fff; color: var(--text); box-shadow: 0 1px 3px rgba(10, 26, 51, .12); }
+.admin-tabs { margin-bottom: 24px; }
+
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.filters, .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.actions .spacer { flex: 1; }
+.filters select, .filters input { height: 38px; padding: 0 12px; border: 1px solid var(--line); border-radius: 9px; background: #fff; font: inherit; font-size: 14.5px; }
+
+.table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; font-size: 15px; }
+.table th { padding: 11px 14px; text-align: left; font-size: 13px; font-weight: 600; color: var(--muted); background: #FAFBFC; border-bottom: 1px solid var(--line); }
+.table td { padding: 12px 14px; border-top: 1px solid var(--line); vertical-align: top; }
+.table tbody tr[tabindex] { cursor: pointer; }
+.table tbody tr[tabindex]:hover { background: var(--accent-soft); }
+.table .c-date { width: 150px; white-space: nowrap; color: var(--muted); font-variant-numeric: tabular-nums; }
+.table .c-cat { width: 140px; }
+.table .c-num { width: 100px; white-space: nowrap; }
+.table .c-state { width: 220px; }
+.table .msg { padding: 32px; text-align: center; }
+.table .sub { display: block; font-size: 13px; color: var(--muted); }
+.chip { display: inline-block; padding: 1px 9px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 12.5px; font-weight: 600; }
+
+.state { font-weight: 600; font-size: 14px; }
+.state.ok { color: #1E8E5A; }
+.state.wait { color: #B26A00; }
+.state.bad { color: #D93036; }
+details.state summary { cursor: pointer; }
+details.state p { margin: 8px 0 0; font-weight: 400; color: var(--body); word-break: break-all; }
+
+.panel-box { margin-bottom: 20px; padding: 24px; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); }
+.panel-box h2 { margin: 0 0 6px; font-size: 19px; }
+.box-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.box-head h2 { margin: 0; }
+.panel-box .table { border-radius: 10px; }
+.hint { margin: 4px 0 12px; font-size: 13.5px; color: var(--muted); }
+
+.field { display: flex; flex-direction: column; gap: 6px; margin: 0 0 14px; padding: 0; border: 0; font-size: 14px; font-weight: 600; }
+.field legend { padding: 0; margin-bottom: 8px; }
+.field input, .field textarea, dialog textarea, .inline-form input, .link-row input {
+  width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px;
+  background: #fff; font: inherit; font-size: 15px; font-weight: 400;
+}
+.field textarea, dialog textarea { resize: vertical; line-height: 1.6; }
+.field input:focus, .field textarea:focus, dialog textarea:focus, .inline-form input:focus, .link-row input:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+.check { flex: none; display: inline-flex; align-items: center; gap: 6px; font-size: 15px; white-space: nowrap; cursor: pointer; }
+.check small { color: var(--muted); }
+.group-checks { display: flex; flex-wrap: wrap; gap: 8px 20px; font-weight: 400; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+
+.link-row { display: grid; grid-template-columns: 1fr 2fr auto; gap: 8px; margin-bottom: 8px; }
+.icon-x { width: 38px; border: 0; border-radius: 9px; background: transparent; color: var(--muted); cursor: pointer; }
+.icon-x:hover { background: #FDECEC; color: #D93036; }
+
+.admin-list { list-style: none; margin: 16px 0; padding: 0; }
+.admin-list li { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-top: 1px solid var(--line); }
+.admin-list small { color: var(--muted); }
+.inline-form { display: flex; gap: 8px; max-width: 480px; }
+
+dialog { width: min(520px, 100vw - 32px); padding: 22px; border: 0; border-radius: 16px; box-shadow: 0 20px 60px rgba(10, 26, 51, .25); }
+dialog.wide { width: min(760px, 100vw - 32px); }
+dialog::backdrop { background: rgba(10, 26, 51, .35); backdrop-filter: blur(3px); }
+dialog h2 { margin: 0 0 18px; font-size: 20px; }
+dialog .actions { margin-top: 18px; }
+
+.toast {
+  position: fixed; left: 50%; bottom: 28px; z-index: 100; transform: translateX(-50%);
+  max-width: calc(100vw - 32px); padding: 12px 20px; border-radius: 12px;
+  background: var(--navy); color: #fff; font-size: 15px; box-shadow: 0 8px 24px rgba(10, 26, 51, .25);
+}
+
+@media (max-width: 760px) {
+  .grid-2, .link-row { grid-template-columns: 1fr; }
+  .link-row { padding-bottom: 8px; border-bottom: 1px dashed var(--line); }
+  .table { display: block; overflow-x: auto; }
+  .table .c-date { width: auto; }
+  .admin-tabs { display: flex; overflow-x: auto; }
+  .account span { display: none; }
+}

@@ -59,9 +59,9 @@
         </li>
         <li><a href="#notice">공지·소식</a>
           <ul class="sub">
-            <li><a href="#notice">공지사항</a></li>
-            <li><a href="#seminar">세미나</a></li>
-            <li><a href="#news">연구소 소식</a></li>
+            <li><a href="board.html?type=notices">공지사항</a></li>
+            <li><a href="board.html?type=seminars">세미나</a></li>
+            <li><a href="board.html?type=news">연구소 소식</a></li>
             <li><a href="#newsletter">뉴스레터</a></li>
           </ul>
         </li>
@@ -98,7 +98,7 @@
       <div class="panel">
         <div class="panel-head">
           <h2>공지사항</h2>
-          <a class="more" href="#">전체 보기</a>
+          <a class="more" href="board.html?type=notices">전체 보기</a>
         </div>
         <ul class="post-list">
           <li><a href="#">
@@ -133,25 +133,25 @@
       <div class="panel" id="seminar">
         <div class="panel-head">
           <h2>세미나</h2>
-          <a class="more" href="#">지난 세미나</a>
+          <a class="more" href="board.html?type=seminars">전체 보기</a>
         </div>
         <ul class="seminar-list">
-          <li>
+          <li><a href="#">
             <time class="date-tile" datetime="2026-09-07"><small>2026.09</small><b>07</b><span>월</span></time>
             <div><strong>김도균 박사</strong><p>미국 화이자 백신개발부</p></div>
-          </li>
-          <li>
+          </a></li>
+          <li><a href="#">
             <time class="date-tile" datetime="2026-06-12"><small>2026.06</small><b>12</b><span>금</span></time>
             <div><strong>권오만 교수</strong><p>서울시립대 생명과학과</p></div>
-          </li>
-          <li>
+          </a></li>
+          <li><a href="#">
             <time class="date-tile" datetime="2026-03-26"><small>2026.03</small><b>26</b><span>목</span></time>
             <div><strong>박주후 박사 · 곽소영 박사</strong><p>고려대 · 계명대</p></div>
-          </li>
-          <li>
+          </a></li>
+          <li><a href="#">
             <time class="date-tile" datetime="2026-02-10"><small>2026.02</small><b>10</b><span>화</span></time>
             <div><strong>김주영 박사</strong><p>경북대학교병원 생명의학연구원</p></div>
-          </li>
+          </a></li>
         </ul>
       </div>
     </div>
@@ -304,7 +304,7 @@
     <div class="wrap">
       <div class="section-head">
         <h2>연구소 소식</h2>
-        <a class="more" href="#">전체 보기</a>
+        <a class="more" href="board.html?type=news">전체 보기</a>
       </div>
       <div class="news-grid">
         <a class="news-card" href="#">
@@ -447,9 +447,10 @@
       <li><a href="https://med.knu.ac.kr" target="_blank" rel="noopener">경북대학교 의과대학</a></li>
     </ul>
   </div>
-  <div class="wrap copyright">© Cell &amp; Matrix Research Institute</div>
+  <div class="wrap copyright">© Cell &amp; Matrix Research Institute · <a href="admin.html">관리자</a></div>
 </footer>
 
 <script src="js/main.js"></script>
+<script type="module" src="js/home.js"></script>
 </body>
 </html>
