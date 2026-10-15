@@ -46,6 +46,58 @@ service cloud.firestore {
         && (photo == '' || (text(photo, 100000) && photo.matches('data:image/jpeg;base64,[A-Za-z0-9+/=]+')));
     }
 
+    // 신청·제출(연구비·포상·업적)은 학교 메일(@knu.ac.kr)로 로그인한 사람만
+    function knuUser() {
+      return signedIn() && myEmail().matches('.+@knu[.]ac[.]kr');
+    }
+    function validApplication() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['uid', 'email', 'type', 'name', 'dept', 'position', 'phone', 'amount',
+                               'details', 'memo', 'files', 'status', 'createdAt'])
+        && d.uid == request.auth.uid
+        && d.email == myEmail()
+        && d.type in ['publication', 'proposal', 'editing',
+                      'academic-award', 'paper-award', 'young-scientist', 'research-note', 'photo-contest',
+                      'achievement']
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 50
+        && d.dept is string && d.dept.size() > 0 && d.dept.size() <= 100
+        && text(d.get('position', ''), 50)
+        && d.phone is string && d.phone.size() > 0 && d.phone.size() <= 30
+        // 신청 금액은 연구비 지원에만 있어요
+        && (d.type in ['publication', 'proposal', 'editing']) == ('amount' in d)
+        && (!('amount' in d) || (d.amount is int && d.amount > 0 && d.amount <= 100000000))
+        && d.details is map && d.details.size() <= 10
+        && text(d.get('memo', ''), 2000)
+        && d.files is list && d.files.size() <= 5
+        && d.status == 'submitted'
+        && d.createdAt == request.time;
+    }
+
+    // 관리자가 구성원에게 보내는 메일 (숨은참조 50명씩)
+    function validCampaignMail() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['to', 'bcc', 'message', 'campaignId', 'createdAt'])
+        && d.to == 'cmri@knu.ac.kr'
+        && d.bcc is list && d.bcc.size() > 0 && d.bcc.size() <= 50
+        && d.message.keys().hasOnly(['subject', 'text', 'html'])
+        && exists(/databases/$(database)/documents/campaigns/$(d.campaignId));
+    }
+    // 신청·제출 알림 (글만, 받는 사람 한 명)
+    function validNotice(id) {
+      let d = request.resource.data;
+      let app = get(/databases/$(database)/documents/applications/$(d.applicationId)).data;
+      return signedIn()
+        && d.keys().hasOnly(['to', 'message', 'applicationId', 'createdAt'])
+        && d.message.keys().hasOnly(['subject', 'text'])
+        && text(d.message.subject, 200) && text(d.message.text, 10000)
+        && (
+          // 새 신청: 신청자가 자기 신청마다 한 번, 연구소 메일로만
+          (id == d.applicationId && d.to == 'cmri@knu.ac.kr' && app.uid == request.auth.uid)
+          // 결과: 관리자가 그 신청자에게만
+          || (isAdmin() && d.to == app.email)
+        );
+    }
+
     match /admins/{email} {
       // 본인 문서는 읽을 수 있어야 관리자인지 확인할 수 있어요
       allow read: if isAdmin() || (signedIn() && email == myEmail());
@@ -82,6 +134,17 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // 신청·제출: 신청자는 자기 것만 보고, 관리자는 결과(상태·안내)만 고쳐요
+    match /applications/{id} {
+      allow read: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow create: if knuUser() && validApplication();
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'note', 'decidedAt', 'decidedBy'])
+        && request.resource.data.status in ['submitted', 'approved', 'rejected']
+        && text(request.resource.data.get('note', ''), 2000);
+      allow delete: if isAdmin();
+    }
+
     // 메일 받는 사람 명단: 관리자만
     match /recipients/{email} {
       allow read, delete: if isAdmin();
@@ -95,17 +158,11 @@ service cloud.firestore {
       allow read, create: if isAdmin();
     }
 
-    // Trigger Email 확장 프로그램이 읽어서 cmri@knu.ac.kr로 보내는 곳.
-    // 보내는 주소(from)·회신 주소는 바꿀 수 없고, 한 문서에 숨은참조 50명까지.
+    // Trigger Email 확장 프로그램이 읽어서 cmri@knu.ac.kr 이름으로 보내는 곳.
+    // 보내는 주소(from)·회신 주소는 바꿀 수 없어요.
     match /mail/{id} {
       allow read: if isAdmin();
-      allow create: if isAdmin()
-        && request.resource.data.keys().hasOnly(['to', 'bcc', 'message', 'campaignId', 'createdAt'])
-        && request.resource.data.to == 'cmri@knu.ac.kr'
-        && request.resource.data.bcc is list
-        && request.resource.data.bcc.size() > 0 && request.resource.data.bcc.size() <= 50
-        && request.resource.data.message.keys().hasOnly(['subject', 'text', 'html'])
-        && exists(/databases/$(database)/documents/campaigns/$(request.resource.data.campaignId));
+      allow create: if (isAdmin() && validCampaignMail()) || validNotice(id);
     }
   }
 }

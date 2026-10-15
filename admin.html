@@ -42,6 +42,7 @@
     <nav class="seg admin-tabs" aria-label="관리 메뉴">
       <button type="button" data-tab="posts" class="on">게시글</button>
       <button type="button" data-tab="faculty">연구진</button>
+      <button type="button" data-tab="applications">신청·제출 <span class="count" id="appCount" hidden></span></button>
       <button type="button" data-tab="mail">메일 보내기</button>
       <button type="button" data-tab="people">받는 사람</button>
       <button type="button" data-tab="admins">관리자</button>
@@ -80,6 +81,25 @@
       <table class="table">
         <thead><tr><th class="c-photo">사진</th><th>이름</th><th class="c-cat">구분</th><th>소속·직위</th></tr></thead>
         <tbody id="facultyRows"></tbody>
+      </table>
+    </section>
+
+    <!-- 신청·제출 -->
+    <section class="tab-panel" data-panel="applications" hidden>
+      <div class="toolbar">
+        <div class="filters">
+          <select id="appGroupFilter" aria-label="분류"></select>
+          <select id="appStatusFilter" aria-label="상태"></select>
+        </div>
+        <div class="actions">
+          <button class="btn-s" type="button" id="appRefreshBtn">새로 고침</button>
+          <button class="btn-s" type="button" id="appCsvBtn">엑셀(CSV)로 받기</button>
+        </div>
+      </div>
+      <p class="hint">홈페이지 연구 지원 → 신청·제출에서 학교 메일로 로그인한 사람이 낸 연구비 지원·포상 신청과 업적 제출이에요. CSV는 지금 고른 목록만 받아요.</p>
+      <table class="table">
+        <thead><tr><th class="c-date">신청일</th><th class="c-cat">종류</th><th>신청자</th><th>내용</th><th class="c-num">상태</th></tr></thead>
+        <tbody id="appRows"></tbody>
       </table>
     </section>
 
@@ -236,6 +256,24 @@
       <span class="spacer"></span>
       <button class="btn-s" value="cancel" formnovalidate>취소</button>
       <button class="btn-s primary" type="submit" value="save">가져오기</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- 신청·제출 보기 -->
+<dialog id="appDialog" class="wide">
+  <form method="dialog" id="appForm">
+    <h2 id="appDialogTitle">신청</h2>
+    <dl class="app-info" id="appInfo"></dl>
+    <div class="app-files" id="appFiles"></div>
+    <label class="field">결과 안내 (신청자에게 보여요)<textarea name="note" rows="3" maxlength="2000"></textarea></label>
+    <label class="check"><input name="notify" type="checkbox" checked> 신청자에게 결과 메일 보내기</label>
+    <div class="actions">
+      <button class="btn-s danger" type="button" id="deleteAppBtn">삭제</button>
+      <span class="spacer"></span>
+      <button class="btn-s" value="cancel" formnovalidate>닫기</button>
+      <button class="btn-s" type="submit" value="rejected" id="rejectBtn">반려</button>
+      <button class="btn-s primary" type="submit" value="approved" id="approveBtn">승인</button>
     </div>
   </form>
 </dialog>

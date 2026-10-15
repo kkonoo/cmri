@@ -1,0 +1,25 @@
+rules_version = '2';
+
+// Firebase 콘솔 → Storage → 규칙에 그대로 붙여 넣어요.
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Firestore의 admins/{이메일} 문서가 있으면 관리자
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email_verified == true
+        && firestore.exists(/databases/(default)/documents/admins/$(request.auth.token.email.lower()));
+    }
+
+    // 신청·제출 증빙: 학교 메일로 로그인한 신청자가 자기 폴더에 올리고(덮어쓰기 안 됨), 본인과 관리자만 열어요
+    match /applications/{uid}/{appId}/{file} {
+      allow read: if (request.auth != null && request.auth.uid == uid) || isAdmin();
+      allow create: if resource == null
+        && request.auth != null && request.auth.uid == uid
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.lower().matches('.+@knu[.]ac[.]kr')
+        && request.resource.size < 20 * 1024 * 1024
+        && file.lower().matches('.+[.](pdf|jpg|jpeg|png|hwp|hwpx|doc|docx|xls|xlsx|ppt|pptx)');
+      allow delete: if isAdmin();
+    }
+  }
+}

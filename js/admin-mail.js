@@ -4,7 +4,7 @@ import { esc, renderBody } from './posts.js';
 
 const FROM = 'cmri@knu.ac.kr';
 const BCC_SIZE = 50;   // 한 통에 숨은참조 50명씩 (firestore.rules와 같게)
-const SIGNATURE = '경북대학교 의과대학 세포·기질연구소\ncmri@knu.ac.kr · 053-420-4868';
+export const SIGNATURE = '경북대학교 의과대학 세포·기질연구소\ncmri@knu.ac.kr · 053-420-4868';
 
 const isEmail = s => /^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/.test(s);
 const splitGroups = s => [...new Set(String(s || '').split(/[,;/]/).map(g => g.trim()).filter(Boolean))];

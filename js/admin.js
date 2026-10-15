@@ -4,6 +4,7 @@ import { esc } from './posts.js';
 import { initPosts } from './admin-posts.js';
 import { initMail } from './admin-mail.js';
 import { initFaculty } from './admin-faculty.js';
+import { initApplications } from './admin-applications.js';
 
 const $ = s => document.querySelector(s);
 const gate = $('#gate');
@@ -89,6 +90,7 @@ async function start() {
     initMail(ctx);   // ctx.composeMail을 만들어 둬요
     initPosts(ctx);
     initFaculty(ctx);
+    initApplications(ctx);
     initAdmins(ctx);
   });
 }

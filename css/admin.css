@@ -53,6 +53,15 @@ body.admin { background: var(--surface-2); min-height: 100vh; }
 .state.wait { color: var(--warn); }
 .state.bad { color: var(--bad); }
 details.state summary { cursor: pointer; }
+.seg .count { display: inline-block; min-width: 20px; margin-left: 4px; padding: 0 6px; border-radius: 999px; background: var(--accent); color: var(--on-accent); font-size: 12px; line-height: 20px; text-align: center; }
+.app-info { display: grid; gap: 0; margin: 0 0 16px; }
+.app-info div { display: grid; grid-template-columns: 8em minmax(0, 1fr); gap: 12px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14.5px; }
+.app-info dt { color: var(--muted); }
+.app-info dd { margin: 0; white-space: pre-wrap; word-break: break-word; }
+.app-info a, .app-files a { color: var(--accent); }
+.app-files { margin-bottom: 16px; }
+.app-files ul { margin: 0; padding-left: 18px; font-size: 14.5px; }
+.app-files small { color: var(--muted); }
 details.state p { margin: 8px 0 0; font-weight: 400; color: var(--body); word-break: break-all; }
 
 .panel-box { margin-bottom: 20px; padding: 24px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
