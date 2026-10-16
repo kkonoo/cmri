@@ -92,6 +92,7 @@ async function start() {
     button.disabled = true;
     try {
       const url = new URL(cleanUrl(params.get('type')), location.href).href;
+      a.languageCode = document.documentElement.lang === 'en' ? 'en' : 'ko';   // 로그인 메일도 화면 언어로
       await fa.sendSignInLinkToEmail(a, email, { url, handleCodeInApp: true });
       try { localStorage.setItem(EMAIL_KEY, email); } catch { /* 돌아왔을 때 주소를 다시 물어요 */ }
       say($('#loginMsg'), MSG.sent, 'ok');
