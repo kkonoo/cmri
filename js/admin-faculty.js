@@ -113,6 +113,33 @@ export function initFaculty({ db, fs, email, toast }) {
     showPhoto();
   });
 
+  // 사진 여러 장: 파일 이름(확장자 빼고)이 이름과 같은 사람에게 넣어요. 같은 이름이 둘이면 건너뛰어요.
+  $('#facultyPhotosInput').addEventListener('change', async e => {
+    const files = [...e.target.files];
+    e.target.value = '';
+    let done = 0;
+    const missed = [];
+    for (const file of files) {
+      const name = file.name.normalize('NFC').replace(/\.[^.]*$/, '').trim();
+      const found = people.filter(p => p.nameKo === name);
+      if (found.length !== 1) {
+        missed.push(name);
+        continue;
+      }
+      try {
+        const shrunk = await shrinkPhoto(file);
+        await fs.setDoc(fs.doc(db, 'faculty', found[0].id), { photo: shrunk, updatedAt: fs.serverTimestamp(), updatedBy: email }, { merge: true });
+        found[0].photo = shrunk;
+        done++;
+      } catch (err) {
+        console.error(err);
+        missed.push(name);
+      }
+    }
+    render();
+    toast(missed.length ? `사진 ${done}장을 넣었어요. 못 넣은 파일: ${missed.join(', ')}` : `사진 ${done}장을 넣었어요.`);
+  });
+
   form.addEventListener('submit', async e => {
     if (e.submitter?.value !== 'save') return;
     e.preventDefault();

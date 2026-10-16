@@ -73,11 +73,12 @@
           <input id="facultySearch" type="search" placeholder="이름·소속 찾기" aria-label="찾기">
         </div>
         <div class="actions">
+          <label class="btn-s">사진 한꺼번에 넣기<input type="file" accept="image/*" multiple id="facultyPhotosInput" hidden></label>
           <button class="btn-s" type="button" id="facultyImportBtn">엑셀에서 붙여 넣기</button>
           <button class="btn-s primary" type="button" id="addFacultyBtn">한 명 추가</button>
         </div>
       </div>
-      <p class="hint">홈페이지 연구소 소개 → 연구진에 구분별로 나와요. 소장이 맨 앞, 나머지는 가나다순이에요. 아무도 없으면 ‘준비 중’ 안내가 보여요.</p>
+      <p class="hint">홈페이지 연구소 소개 → 연구진에 구분별로 나와요. 소장이 맨 앞, 나머지는 가나다순이에요. 아무도 없으면 ‘준비 중’ 안내가 보여요. 사진을 한꺼번에 넣을 때는 파일 이름을 이름과 같게(홍길동.jpg) 해 주세요.</p>
       <table class="table">
         <thead><tr><th class="c-photo">사진</th><th>이름</th><th class="c-cat">구분</th><th>소속·직위</th></tr></thead>
         <tbody id="facultyRows"></tbody>
