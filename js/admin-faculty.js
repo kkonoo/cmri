@@ -113,7 +113,7 @@ export function initFaculty({ db, fs, email, toast }) {
     showPhoto();
   });
 
-  // 사진 여러 장: 파일 이름(확장자 빼고)이 이름과 같은 사람에게 넣어요. 같은 이름이 둘이면 건너뛰어요.
+  // 사진 여러 장: 파일 이름(확장자 빼고)이 이름이나 영문 이름과 같은 사람에게 넣어요. 같은 이름이 둘이면 건너뛰어요.
   $('#facultyPhotosInput').addEventListener('change', async e => {
     const files = [...e.target.files];
     e.target.value = '';
@@ -121,7 +121,7 @@ export function initFaculty({ db, fs, email, toast }) {
     const missed = [];
     for (const file of files) {
       const name = file.name.normalize('NFC').replace(/\.[^.]*$/, '').trim();
-      const found = people.filter(p => p.nameKo === name);
+      const found = people.filter(p => p.nameKo === name || (p.nameEn || '').toLowerCase() === name.toLowerCase());
       if (found.length !== 1) {
         missed.push(name);
         continue;
