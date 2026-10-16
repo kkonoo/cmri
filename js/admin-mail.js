@@ -58,21 +58,162 @@ export function initMail(ctx) {
   }
 
   // ---------- 받는 사람 탭 ----------
+  let groupFilter = '';          // 위쪽 그룹 버튼으로 고른 그룹 ('' = 전체)
+  const picked = new Set();      // 표에서 고른 사람 (이메일)
+  let shownEmails = [];
+
   function renderPeople() {
-    const filter = $('#groupFilter');
-    const g = filter.value;
+    const groups = groupsOf();
+    if (groupFilter && !groups.includes(groupFilter)) groupFilter = '';
+    for (const e of [...picked]) if (!people.some(p => p.email === e)) picked.delete(e);
+    $('#groupChips').innerHTML = [['', '전체', people.length], ...groups.map(g => [g, g, countOf(g)])]
+      .map(([g, label, n]) => `<button type="button" data-group="${esc(g)}"${g === groupFilter ? ' class="on"' : ''}>${esc(label)}<small>${n}</small></button>`).join('')
+      + '<button type="button" class="add" id="newGroupBtn">+ 새 그룹</button>';
+    $('#groupTools').hidden = !groupFilter;
+    $('#groupToolsName').textContent = groupFilter;
     const q = $('#peopleSearch').value.trim().toLowerCase();
-    filter.innerHTML = `<option value="">전체 (${people.length}명)</option>`
-      + groupsOf().map(x => `<option value="${esc(x)}"${x === g ? ' selected' : ''}>${esc(x)} (${countOf(x)}명)</option>`).join('');
-    const shown = people.filter(p => (!filter.value || p.groups?.includes(filter.value))
+    const shown = people.filter(p => (!groupFilter || p.groups?.includes(groupFilter))
       && (!q || (p.name || '').toLowerCase().includes(q) || p.email.includes(q)));
+    shownEmails = shown.map(p => p.email);
     $('#peopleRows').innerHTML = shown.length
       ? shown.map(p => `<tr data-email="${esc(p.email)}" tabindex="0">
+          <td class="c-check"><input type="checkbox" data-pick="${esc(p.email)}" aria-label="${esc(p.name || p.email)} 고르기"${picked.has(p.email) ? ' checked' : ''}></td>
           <td>${esc(p.name || '-')}</td><td>${esc(p.email)}</td>
           <td>${(p.groups || []).map(x => `<span class="chip">${esc(x)}</span>`).join(' ')}</td>
         </tr>`).join('')
-      : `<tr><td colspan="3" class="msg">${people.length ? '찾는 사람이 없어요.' : '아직 명단이 없어요. 엑셀에서 붙여 넣어 시작해 보세요.'}</td></tr>`;
+      : `<tr><td colspan="4" class="msg">${people.length ? '찾는 사람이 없어요.' : '아직 명단이 없어요. 엑셀이나 메일 주소록을 붙여 넣어 시작해 보세요.'}</td></tr>`;
+    renderPicked();
   }
+
+  function renderPicked() {
+    const n = picked.size;
+    $('#selectionBar').hidden = !n;
+    $('#selectionCount').textContent = `${n}명 골랐어요`;
+    $('#removeFromGroupBtn').hidden = !groupFilter;
+    $('#removeFromGroupBtn').textContent = `‘${groupFilter}’에서 빼기`;
+    const all = $('#pickAll');
+    all.checked = shownEmails.length > 0 && shownEmails.every(e => picked.has(e));
+    all.indeterminate = !all.checked && shownEmails.some(e => picked.has(e));
+  }
+
+  // 여러 사람의 그룹을 한 번에 저장해요 (400명씩)
+  async function saveGroups(changes, done) {
+    if (!changes.length) return;
+    try {
+      for (let i = 0; i < changes.length; i += 400) {
+        const batch = fs.writeBatch(db);
+        for (const c of changes.slice(i, i + 400)) {
+          batch.update(fs.doc(db, 'recipients', c.email), { groups: c.groups, updatedAt: fs.serverTimestamp() });
+        }
+        await batch.commit();
+      }
+      for (const c of changes) {
+        const p = people.find(x => x.email === c.email);
+        if (p) p.groups = c.groups;
+      }
+      renderPeople();
+      renderGroupChecks();
+      toast(done);
+    } catch (err) {
+      console.error(err);
+      toast('저장하지 못했어요. 다시 시도해 주세요.');
+    }
+  }
+
+  // 그룹 이름: 쉼표·세미콜론·빗금은 붙여 넣기에서 그룹을 나누는 글자라 못 써요
+  function groupName(v) {
+    const g = v.trim().replace(/\s+/g, ' ');
+    if (!g) return null;
+    if (/[,;/]/.test(g)) {
+      toast('그룹 이름에는 쉼표(,)·세미콜론(;)·빗금(/)을 쓸 수 없어요.');
+      return null;
+    }
+    return g;
+  }
+
+  // 그룹에 넣기 / 이름 바꾸기 창
+  const groupForm = $('#groupForm');
+  let groupMode = 'add';
+  function openGroupDialog(mode) {
+    groupMode = mode;
+    groupForm.reset();
+    $('#groupList').innerHTML = groupsOf().map(g => `<option value="${esc(g)}">`).join('');
+    $('#groupDialogTitle').textContent = mode === 'add' ? `${picked.size}명을 그룹에 넣기` : '그룹 이름 바꾸기';
+    $('#groupDialogHint').textContent = mode === 'add'
+      ? '있는 그룹을 고르거나 새 이름을 쓰면 그 이름으로 그룹이 생겨요.'
+      : `‘${groupFilter}’ 그룹 ${countOf(groupFilter)}명의 그룹 이름이 바뀌어요. 있는 그룹 이름을 쓰면 두 그룹이 합쳐져요.`;
+    if (mode === 'rename') groupForm.elements.group.value = groupFilter;
+    $('#groupDialog').showModal();
+  }
+
+  groupForm.addEventListener('submit', async e => {
+    if (e.submitter?.value !== 'save') return;
+    e.preventDefault();
+    const g = groupName(groupForm.elements.group.value);
+    if (!g) return;
+    $('#groupDialog').close();
+    if (groupMode === 'add') {
+      const changes = people.filter(p => picked.has(p.email) && !p.groups?.includes(g))
+        .map(p => ({ email: p.email, groups: [...(p.groups || []), g] }));
+      const n = picked.size;
+      picked.clear();
+      if (!changes.length) {
+        renderPeople();
+        toast(`모두 이미 ‘${g}’에 있어요.`);
+        return;
+      }
+      await saveGroups(changes, `${n}명을 ‘${g}’에 넣었어요.`);
+    } else {
+      const from = groupFilter;
+      if (g === from) return;
+      const changes = people.filter(p => p.groups?.includes(from))
+        .map(p => ({ email: p.email, groups: [...new Set(p.groups.map(x => (x === from ? g : x)))] }));
+      groupFilter = g;
+      await saveGroups(changes, `‘${from}’을 ‘${g}’(으)로 바꿨어요.`);
+    }
+  });
+
+  $('#groupChips').addEventListener('click', e => {
+    if (e.target.closest('#newGroupBtn')) {
+      if (!picked.size) toast('넣을 사람을 아래 표에서 먼저 골라 주세요.');
+      else openGroupDialog('add');
+      return;
+    }
+    const b = e.target.closest('button[data-group]');
+    if (!b) return;
+    groupFilter = b.dataset.group;
+    renderPeople();
+  });
+  $('#addToGroupBtn').addEventListener('click', () => openGroupDialog('add'));
+  $('#renameGroupBtn').addEventListener('click', () => openGroupDialog('rename'));
+  $('#removeFromGroupBtn').addEventListener('click', () => {
+    const g = groupFilter;
+    const changes = people.filter(p => picked.has(p.email) && p.groups?.includes(g))
+      .map(p => ({ email: p.email, groups: p.groups.filter(x => x !== g) }));
+    picked.clear();
+    saveGroups(changes, `${changes.length}명을 ‘${g}’에서 뺐어요.`);
+  });
+  $('#deleteGroupBtn').addEventListener('click', () => {
+    const g = groupFilter;
+    if (!confirm(`‘${g}’ 그룹을 지울까요? ${countOf(g)}명은 명단에 그대로 남고 이 그룹만 빠져요.`)) return;
+    const changes = people.filter(p => p.groups?.includes(g)).map(p => ({ email: p.email, groups: p.groups.filter(x => x !== g) }));
+    groupFilter = '';
+    saveGroups(changes, `‘${g}’ 그룹을 지웠어요.`);
+  });
+  $('#clearPickBtn').addEventListener('click', () => {
+    picked.clear();
+    renderPeople();
+  });
+  $('#pickAll').addEventListener('change', e => {
+    for (const em of shownEmails) e.target.checked ? picked.add(em) : picked.delete(em);
+    renderPeople();
+  });
+  $('#peopleRows').addEventListener('change', e => {
+    const box = e.target.closest('input[data-pick]');
+    if (!box) return;
+    box.checked ? picked.add(box.dataset.pick) : picked.delete(box.dataset.pick);
+    renderPicked();
+  });
 
   let editingEmail = null;
   const personForm = $('#personForm');
@@ -89,10 +230,10 @@ export function initMail(ctx) {
     $('#personDialog').showModal();
   }
 
-  $('#groupFilter').addEventListener('change', renderPeople);
   $('#peopleSearch').addEventListener('input', renderPeople);
   $('#addPersonBtn').addEventListener('click', () => openPerson());
   $('#peopleRows').addEventListener('click', e => {
+    if (e.target.closest('.c-check')) return;
     const tr = e.target.closest('tr[data-email]');
     if (tr) openPerson(people.find(p => p.email === tr.dataset.email));
   });
@@ -139,13 +280,34 @@ export function initMail(ctx) {
   // ---------- 엑셀에서 붙여 넣기 ----------
   const importForm = $('#importForm');
 
-  // 한 줄에 이름·이메일·그룹. 엑셀 복사는 탭으로, 아니면 쉼표로 나눠요.
+  // 엑셀: 한 줄에 이름·이메일·그룹 (탭, 아니면 쉼표로 나눠요)
+  // 메일 주소록: "홍길동 <hong@knu.ac.kr>," 처럼 한 줄에 한 명이든, 받는 사람 칸을 통째로 복사한 한 줄이든 돼요
+  const ADDRESS = /([^<>,;]*?)\s*<([^<>\s]+@[^<>\s]+)>/g;
+  // 이름 옆 직함으로 그룹 나누기 (앞에서부터 먼저 맞는 것)
+  const ROLE_GROUPS = [[/연구초빙교수/, '연구초빙교수'], [/박사후/, '박사후연구원'], [/연구행정원/, '연구행정원'], [/연구원/, '연구원'], [/학생|과정생|대학원생/, '학생']];
+
   function parseRows() {
     const f = importForm.elements;
     const byEmail = new Map();
+    const fallback = f.defaultGroup.value.trim();
     let skipped = 0;
-    for (const line of f.rows.value.split(/\r?\n/)) {
-      if (!line.trim()) continue;
+    const add = (addr, name, groups) => {
+      if (!groups.length && f.byRole.checked) {
+        const role = ROLE_GROUPS.find(([re]) => re.test(name));
+        if (role) groups = [role[1]];
+      }
+      if (!groups.length && fallback) groups = [fallback];
+      const prev = byEmail.get(addr);
+      byEmail.set(addr, { email: addr, name: name || prev?.name || '', groups: [...new Set([...(prev?.groups || []), ...groups])] });
+    };
+    for (const raw of f.rows.value.split(/\r?\n/)) {
+      const line = raw.trim();
+      if (!line) continue;
+      const found = [...line.matchAll(ADDRESS)].filter(m => isEmail(m[2].toLowerCase()));
+      if (found.length) {
+        for (const m of found) add(m[2].toLowerCase(), m[1].replace(/^[\s*•·-]+/, '').replace(/^["']|["']$/g, '').trim(), []);
+        continue;
+      }
       const cells = (line.includes('\t') ? line.split('\t') : line.split(',')).map(c => c.trim());
       const ei = cells.findIndex(c => isEmail(c.toLowerCase()));
       if (ei < 0) {
@@ -153,20 +315,22 @@ export function initMail(ctx) {
         continue;
       }
       const rest = cells.filter((_, i) => i !== ei);
-      const addr = cells[ei].toLowerCase();
-      let groups = splitGroups(rest.slice(1).join(','));
-      if (!groups.length && f.defaultGroup.value.trim()) groups = [f.defaultGroup.value.trim()];
-      const prev = byEmail.get(addr);
-      byEmail.set(addr, { email: addr, name: rest[0] || prev?.name || '', groups: [...new Set([...(prev?.groups || []), ...groups])] });
+      add(cells[ei].toLowerCase(), rest[0] || '', splitGroups(rest.slice(1).join(',')));
     }
     return { rows: [...byEmail.values()], skipped };
   }
 
   function preview() {
     const { rows, skipped } = parseRows();
-    $('#importPreview').textContent = rows.length || skipped
-      ? `가져올 사람 ${rows.length}명${skipped ? ` · 이메일이 없어 건너뛸 줄 ${skipped}개` : ''}`
-      : '붙여 넣으면 몇 명인지 알려 드려요.';
+    if (!rows.length && !skipped) {
+      $('#importPreview').textContent = '붙여 넣으면 몇 명인지, 그룹마다 몇 명인지 알려 드려요.';
+      return;
+    }
+    const counts = new Map();
+    for (const r of rows) for (const g of r.groups.length ? r.groups : ['그룹 없음']) counts.set(g, (counts.get(g) || 0) + 1);
+    $('#importPreview').textContent = `가져올 사람 ${rows.length}명`
+      + (counts.size ? ` (${[...counts].map(([g, n]) => `${g} ${n}`).join(' · ')})` : '')
+      + (skipped ? ` · 이메일이 없어 건너뛸 줄 ${skipped}개` : '');
   }
 
   $('#importBtn').addEventListener('click', () => {

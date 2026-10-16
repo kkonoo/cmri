@@ -136,19 +136,30 @@
 
     <!-- 받는 사람 -->
     <section class="tab-panel" data-panel="people" hidden>
+      <div class="group-bar" id="groupChips" aria-label="그룹"></div>
+      <div class="group-tools" id="groupTools" hidden>
+        <span><b id="groupToolsName"></b> 그룹</span>
+        <button class="btn-s" type="button" id="renameGroupBtn">이름 바꾸기</button>
+        <button class="btn-s danger" type="button" id="deleteGroupBtn">그룹 지우기</button>
+      </div>
       <div class="toolbar">
         <div class="filters">
-          <select id="groupFilter" aria-label="그룹"></select>
           <input id="peopleSearch" type="search" placeholder="이름·이메일 찾기" aria-label="찾기">
         </div>
         <div class="actions">
-          <button class="btn-s" type="button" id="importBtn">엑셀에서 붙여 넣기</button>
+          <button class="btn-s" type="button" id="importBtn">붙여 넣기 (엑셀·메일 주소록)</button>
           <button class="btn-s primary" type="button" id="addPersonBtn">한 명 추가</button>
         </div>
       </div>
-      <p class="hint">명단은 관리자만 볼 수 있어요. 홈페이지에는 나오지 않아요.</p>
+      <p class="hint">명단은 관리자만 볼 수 있어요. 표에서 사람을 골라 <b>그룹에 넣기</b>를 누르면 새 그룹을 만들거나 있는 그룹에 더할 수 있어요.</p>
+      <div class="selection-bar" id="selectionBar" hidden>
+        <span id="selectionCount"></span>
+        <button class="btn-s primary" type="button" id="addToGroupBtn">그룹에 넣기</button>
+        <button class="btn-s" type="button" id="removeFromGroupBtn">그룹에서 빼기</button>
+        <button class="btn-s" type="button" id="clearPickBtn">선택 해제</button>
+      </div>
       <table class="table">
-        <thead><tr><th>이름</th><th>이메일</th><th>그룹</th></tr></thead>
+        <thead><tr><th class="c-check"><input type="checkbox" id="pickAll" aria-label="보이는 사람 모두 고르기"></th><th>이름</th><th>이메일</th><th>그룹</th></tr></thead>
         <tbody id="peopleRows"></tbody>
       </table>
     </section>
@@ -298,15 +309,31 @@
 <!-- 엑셀에서 붙여 넣기 -->
 <dialog id="importDialog" class="wide">
   <form method="dialog" id="importForm">
-    <h2>엑셀에서 붙여 넣기</h2>
-    <p class="hint">엑셀에서 <b>이름 · 이메일 · 그룹</b> 열을 복사해 붙여 넣어요. 이미 있는 이메일은 그룹이 더해져요.</p>
-    <textarea name="rows" rows="10" placeholder="홍길동	hong@knu.ac.kr	구성원"></textarea>
-    <label class="field">그룹 열이 없을 때 넣을 그룹<input name="defaultGroup" placeholder="참여 학생" maxlength="50"></label>
+    <h2>붙여 넣기</h2>
+    <p class="hint">엑셀의 <b>이름 · 이메일 · 그룹</b> 열이나, 메일의 받는 사람·참조 목록(<code>홍길동 &lt;hong@knu.ac.kr&gt;</code>)을 그대로 붙여 넣어요. 이미 있는 이메일은 그룹이 더해져요.</p>
+    <textarea name="rows" rows="10" placeholder="홍길동	hong@knu.ac.kr	교수&#10;김민지 연구원 &lt;kim@knu.ac.kr&gt;,"></textarea>
+    <label class="check"><input name="byRole" type="checkbox" checked> 이름 옆 직함으로 그룹 나누기 (연구초빙교수 · 박사후연구원 · 연구행정원 · 연구원 · 학생)</label>
+    <label class="field">그룹이 없는 사람에게 넣을 그룹<input name="defaultGroup" placeholder="교수" maxlength="30"></label>
     <p class="hint" id="importPreview">붙여 넣으면 몇 명인지 알려 드려요.</p>
     <div class="actions">
       <span class="spacer"></span>
       <button class="btn-s" value="cancel" formnovalidate>취소</button>
       <button class="btn-s primary" type="submit" value="save">가져오기</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- 그룹에 넣기 · 이름 바꾸기 -->
+<dialog id="groupDialog">
+  <form method="dialog" id="groupForm">
+    <h2 id="groupDialogTitle">그룹에 넣기</h2>
+    <label class="field">그룹 이름<input name="group" list="groupList" required maxlength="30" autocomplete="off"></label>
+    <datalist id="groupList"></datalist>
+    <p class="hint" id="groupDialogHint"></p>
+    <div class="actions">
+      <span class="spacer"></span>
+      <button class="btn-s" value="cancel" formnovalidate>취소</button>
+      <button class="btn-s primary" type="submit" value="save">확인</button>
     </div>
   </form>
 </dialog>
