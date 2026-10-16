@@ -71,6 +71,12 @@ Firebase를 연결하기 전에는 메인에 예시 글이 보이고, 게시판�
 - **cmri@knu.ac.kr 비밀번호를 바꾸면** 저장소 폴더에서 `firebase functions:secrets:set SMTP_PASSWORD`로 새 비밀번호를 넣고 `firebase deploy --only functions`를 다시 해요.
 - 보낸 기록이 ‘실패’면 그 줄을 눌러 이유를 봐요. 비밀번호가 틀렸거나 학교 메일에서 외부 메일 프로그램(SMTP) 사용이 꺼져 있는 경우가 많아요. 10분 넘게 ‘보내는 중’이면 함수가 배포됐는지 확인해 주세요 (Firebase 콘솔 → Functions에 `sendMail`).
 - 규칙 파일도 같은 방법으로 올릴 수 있어요: `firebase deploy --only firestore:rules,storage` (콘솔에 붙여 넣는 것과 같아요).
+- **다른 계정(예: Gmail)으로 먼저 시험하려면**: `functions` 폴더에 `.env` 파일을 만들어 아래 두 줄을 적고, `SMTP_PASSWORD`에 그 계정의 비밀번호를 넣고 배포해요. Gmail은 일반 비밀번호 대신 **앱 비밀번호**(구글 계정 → 보안 → 2단계 인증을 켠 뒤 ‘앱 비밀번호’)를 써요. 학교 메일로 돌아갈 때는 `.env`를 지우고, `SMTP_PASSWORD`를 cmri 비밀번호로 바꾼 뒤 다시 배포해요. `.env`는 저장소에 올라가지 않아요.
+
+  ```
+  SMTP_USER=내계정@gmail.com
+  SMTP_HOST=smtp.gmail.com
+  ```
 
 ### 3. 신청·제출 (학교 메일 로그인, 증빙 파일)
 

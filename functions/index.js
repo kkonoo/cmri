@@ -12,11 +12,12 @@ initializeApp();
 
 // 비밀번호는 Secret Manager에 둬요: firebase functions:secrets:set SMTP_PASSWORD
 const SMTP_PASSWORD = defineSecret('SMTP_PASSWORD');
-const USER = 'cmri@knu.ac.kr';
-const FROM = `경북대학교 세포·기질연구소 <${USER}>`;
-// 시험(에뮬레이터)할 때만 다른 서버로 바꿔요
+// 보내는 계정·서버는 기본이 학교 메일이에요. 다른 계정(예: Gmail)으로 시험할 때만
+// functions/.env 파일에 SMTP_USER, SMTP_HOST를 적고 배포해요 (README '메일 발송' 참고).
+const USER = process.env.SMTP_USER || 'cmri@knu.ac.kr';
 const HOST = process.env.SMTP_HOST || 'msvr.knu.ac.kr';
 const PORT = Number(process.env.SMTP_PORT || 465);
+const FROM = `경북대학교 세포·기질연구소 <${USER}>`;
 
 exports.sendMail = onDocumentCreated(
   { document: 'mail/{id}', region: 'asia-northeast3', secrets: [SMTP_PASSWORD], retry: false },
