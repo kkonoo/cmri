@@ -1,5 +1,5 @@
 // 관리자: 받는 사람 명단, 메일 보내기, 보낸 기록
-// 메일은 mail 컬렉션에 쓰면 Firebase 'Trigger Email' 확장 프로그램이 cmri@knu.ac.kr로 보내요.
+// 메일은 mail 컬렉션에 쓰면 메일 함수(functions/index.js)가 cmri@knu.ac.kr로 보내요.
 import { esc, renderBody } from './posts.js';
 
 const FROM = 'cmri@knu.ac.kr';

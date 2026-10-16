@@ -47,28 +47,30 @@ Firebase를 연결하기 전에는 메인에 예시 글이 보이고, 게시판�
 
 ### 2. 메일 발송 (cmri@knu.ac.kr)
 
-학교 메일 비밀번호는 브라우저에 둘 수 없어서, Firebase의 **Trigger Email** 확장 프로그램이 대신 학교 메일 서버(`msvr.knu.ac.kr:465`)로 보내요.
+학교 메일 비밀번호는 브라우저에 둘 수 없어서, 저장소의 [`functions/index.js`](functions/index.js)(Cloud Function `sendMail`)가 `mail` 컬렉션에 쌓인 메일을 학교 메일 서버(`msvr.knu.ac.kr:465`)로 대신 보내요. 비밀번호는 Google Secret Manager에만 있어요. (Firebase의 Trigger Email 확장 프로그램은 2027년 3월에 서비스가 끝나서 쓰지 않아요.)
 
 1. 요금제를 **Blaze(종량제)** 로 바꿔요 (프로젝트 개요 → 업그레이드, 결제 카드 등록). 이 정도 사용량은 무료 한도 안이라 보통 청구되지 않아요. Google Cloud 콘솔 → 결제 → **예산 및 알림**에서 월 1만 원 같은 알림을 걸어 두면 안심이에요.
-2. Firebase → Extensions → **Trigger Email from Firestore** 설치. 설정값:
+2. 내 컴퓨터에 [Node.js](https://nodejs.org) 22 이상을 설치하고, 터미널(Windows는 PowerShell)에서 한 번만:
 
-   | 항목 | 값 |
-   | --- | --- |
-   | Cloud Functions location | `asia-northeast3` (서울) |
-   | Authentication Type | `UsernamePassword` |
-   | SMTP connection URI | `smtps://cmri%40knu.ac.kr@msvr.knu.ac.kr:465` |
-   | SMTP password | cmri@knu.ac.kr 비밀번호 |
-   | Email documents collection | `mail` |
-   | Default FROM address | `경북대학교 세포·기질연구소 <cmri@knu.ac.kr>` |
+   ```sh
+   npm install -g firebase-tools
+   firebase login                       # 프로젝트 관리자 구글 계정으로
+   git clone https://github.com/kkonoo/cmri.git
+   cd cmri/functions && npm install && cd ..
+   firebase functions:secrets:set SMTP_PASSWORD   # cmri@knu.ac.kr 비밀번호를 물어보면 입력
+   firebase deploy --only functions
+   ```
 
-   나머지(Reply-To, Users·Templates collection 등)는 비워 둬요. 확장 프로그램 버전에 따라 항목 이름이 조금 다를 수 있어요.
+   처음 배포할 때 Cloud Functions·Secret Manager 같은 서비스를 켜도 되는지 물으면 `y`로 답해요. 함수는 서울(`asia-northeast3`)에서 돌아요.
 3. 관리자 페이지 → 메일 보내기 → **나에게 먼저 보내기**로 시험해요. 보낸 기록에 ‘1명 보냄’이 뜨면 끝이에요.
 
 알아 둘 것
 
 - 받는 사람끼리 주소가 보이지 않게 숨은참조 50명씩 나눠 보내요. 받는 주소는 cmri@knu.ac.kr이라 보낸 메일이 학교 메일함에도 한 통씩 남아요.
-- cmri@knu.ac.kr 비밀번호를 바꾸면 확장 프로그램 설정의 SMTP password도 바꿔야 해요.
-- 보낸 기록이 10분 넘게 ‘보내는 중’이면 확장 프로그램 설정이나 학교 메일 서버의 하루 발송 제한을 확인해 주세요.
+- 보내는 주소는 함수에서 `cmri@knu.ac.kr`로 고정돼 있어요. 메일 문서에 다른 주소를 넣어도 바뀌지 않아요.
+- **cmri@knu.ac.kr 비밀번호를 바꾸면** 저장소 폴더에서 `firebase functions:secrets:set SMTP_PASSWORD`로 새 비밀번호를 넣고 `firebase deploy --only functions`를 다시 해요.
+- 보낸 기록이 ‘실패’면 그 줄을 눌러 이유를 봐요. 비밀번호가 틀렸거나 학교 메일에서 외부 메일 프로그램(SMTP) 사용이 꺼져 있는 경우가 많아요. 10분 넘게 ‘보내는 중’이면 함수가 배포됐는지 확인해 주세요 (Firebase 콘솔 → Functions에 `sendMail`).
+- 규칙 파일도 같은 방법으로 올릴 수 있어요: `firebase deploy --only firestore:rules,storage` (콘솔에 붙여 넣는 것과 같아요).
 
 ### 3. 신청·제출 (학교 메일 로그인, 증빙 파일)
 
@@ -77,7 +79,7 @@ Firebase를 연결하기 전에는 메인에 예시 글이 보이고, 게시판�
 3. **Storage** → 시작하기 (Blaze 요금제 필요) → 위치 `asia-northeast3`(서울). PDF 몇백 개 정도면 비용은 보통 한 달 몇십 원 수준이에요.
 4. Storage → 규칙 탭에 [`storage.rules`](storage.rules)를 붙여 넣고 **게시**. 관리자인지 Firestore에서 확인하는 규칙이라, Firestore 접근 권한을 묻는 창이 뜨면 허용해 주세요.
 5. Firestore 규칙도 새 [`firestore.rules`](firestore.rules)로 다시 게시해요.
-6. 신청 알림·결과 메일은 2번(Trigger Email)을 설정해야 나가요. 그 전에도 신청과 관리는 돼요.
+6. 신청 알림·결과 메일은 2번(메일 함수)을 배포해야 나가요. 그 전에도 신청과 관리는 돼요.
 
 ### 4. GitHub Pages
 
@@ -95,7 +97,7 @@ Firebase를 연결하기 전에는 메인에 예시 글이 보이고, 게시판�
 | `recipients` | 메일 명단 (문서 ID = 이메일) | 관리자 | 관리자 |
 | `admins` | 관리자 (문서 ID = 이메일) | 관리자 | 관리자 |
 | `campaigns` | 보낸 메일 기록 | 관리자 | 관리자 |
-| `mail` | 확장 프로그램이 보낼 메일 | 관리자 | 관리자 (보내는 주소는 못 바꿈, 한 통 50명까지). 신청 알림은 신청자가 연구소로 한 번, 결과는 관리자가 그 신청자에게만 |
+| `mail` | 메일 함수(`sendMail`)가 보낼 메일, 결과는 `delivery` 칸에 | 관리자 | 관리자 (보내는 주소는 못 바꿈, 한 통 50명까지). 신청 알림은 신청자가 연구소로 한 번, 결과는 관리자가 그 신청자에게만 |
 | Storage `applications/{신청자}/{신청}/` | 증빙 파일 (20MB, 한글·PDF·사진 등) | 신청자 본인·관리자 | 신청자는 올리기만, 관리자는 지우기 |
 
 ## 파일
@@ -123,6 +125,8 @@ Firebase를 연결하기 전에는 메인에 예시 글이 보이고, 게시판�
 | `js/admin-applications.js` | 신청·제출 관리, 결과 메일, CSV |
 | `js/admin-mail.js` | 받는 사람 명단, 메일 보내기, 보낸 기록 |
 | `firestore.rules`, `storage.rules` | Firestore·Storage 보안 규칙 |
+| `functions/` | 메일 보내는 Cloud Function (`firebase deploy --only functions`) |
+| `firebase.json`, `.firebaserc` | Firebase CLI 설정 (프로젝트 `cmri-knumed`) |
 | `img/` | 로고, 파비콘, 첫 화면 그림, 송년심포지엄 사진 |
 | `old/` | 기존 홈페이지 스크린샷 (참고용) |
 

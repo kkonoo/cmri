@@ -158,7 +158,7 @@ service cloud.firestore {
       allow read, create: if isAdmin();
     }
 
-    // Trigger Email 확장 프로그램이 읽어서 cmri@knu.ac.kr 이름으로 보내는 곳.
+    // 메일 함수(functions/index.js)가 읽어서 cmri@knu.ac.kr 이름으로 보내는 곳.
     // 보내는 주소(from)·회신 주소는 바꿀 수 없어요.
     match /mail/{id} {
       allow read: if isAdmin();
