@@ -15,6 +15,8 @@ const UPLOAD = args.includes('--upload');
 const SITE = option('--site', 'http://cmri.knu.ac.kr');
 const HERE = dirname(fileURLToPath(import.meta.url));
 const KEY = option('--key', join(HERE, 'service-account.json'));
+// 옛 호스팅은 하루 트래픽 한도가 있어서, 한 번에 이만큼만 받고 멈춰요 (다음 날 다시 돌리면 이어서)
+const MAX_MB = Number(option('--max-mb', 300));
 const CACHE = join(HERE, '.old-board');
 const BUCKET = 'cmri-knumed.firebasestorage.app';   // js/firebase-config.js의 storageBucket
 const MAX_LINKS = 10;                               // firestore.rules와 같게
@@ -34,23 +36,29 @@ const warn = (id, text) => warnings.push(`[${id}] ${text}`);
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36';
 const eucKr = new TextDecoder('euc-kr');
 
-// 옛 서버가 접속을 막으면(해외 접속, 트래픽 초과 같은) 더 받지 않고 멈춰요
-class Blocked extends Error {}
+// 옛 서버가 막았거나(해외 접속, 트래픽 초과) 받을 양을 다 받으면 더 받지 않고 멈춰요
+class Stop extends Error {}
+let downloaded = 0;   // 이번에 옛 서버에서 받은 바이트
 
 // 잠깐 끊겨도 세 번까지 다시 받아요
 async function get(url, referer = `${SITE}/`) {
+  const fromSite = url.startsWith(SITE);
+  if (fromSite && downloaded >= MAX_MB * 1e6) {
+    throw new Stop(`이번에 받을 양(${MAX_MB}MB)을 다 받아서 멈췄어요. 옛 홈페이지의 하루 트래픽 한도를 넘지 않게 나눠 받아요.`);
+  }
   for (let tries = 1; ; tries++) {
     let status = 0;
     try {
       const res = await fetch(url, { headers: { 'User-Agent': UA, Referer: referer } });
       status = res.status;
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return { type: res.headers.get('content-type') || '', bytes: Buffer.from(await res.arrayBuffer()) };
+      const bytes = Buffer.from(await res.arrayBuffer());
+      if (fromSite) downloaded += bytes.length;
+      return { type: res.headers.get('content-type') || '', bytes };
     } catch (err) {
       if (tries === 3) {
-        const message = `${err.message} (${url})`;
-        const blocked = url.startsWith(SITE) && (!status || [403, 429, 503, 509].includes(status));
-        throw blocked ? new Blocked(message) : new Error(message);
+        const blocked = fromSite && (!status || [403, 429, 503, 509].includes(status));
+        throw blocked ? new Stop(`옛 서버가 접속을 막았어요: ${err.message} (${url})`) : new Error(`${err.message} (${url})`);
       }
       await new Promise(r => setTimeout(r, 2000 * tries));
     }
@@ -63,7 +71,7 @@ async function getBoardPage(url) {
   if (!html.includes('bbs-wrap')) {
     writeFileSync(cachePath('blocked.html'), html);
     const text = clean(cheerio.load(html)('body').text()).slice(0, 100);
-    throw new Blocked(`게시판 대신 다른 화면이 왔어요${text ? `: “${text}”` : ''} (${url})`);
+    throw new Stop(`옛 서버가 게시판 대신 다른 화면을 줬어요${text ? `: “${text}”` : ''} (${url})`);
   }
   return html;
 }
@@ -260,7 +268,7 @@ async function download(id, key, url, referer) {
     writeFileSync(path, bytes);
     return path;
   } catch (err) {
-    if (err instanceof Blocked) throw err;
+    if (err instanceof Stop) throw err;
     warn(id, `파일을 받지 못했어요: ${err.message}`);
     return null;
   }
@@ -449,7 +457,7 @@ async function main() {
     let done = 0;
     const prepared = await mapLimit([...ids], 2, async ([oldId, pinned]) => {
       const post = await preparePost(board, oldId, pinned).catch(err => {
-        if (err instanceof Blocked) throw err;
+        if (err instanceof Stop) throw err;
         warn(`old-${oldId}`, err.message);
         return null;
       });
@@ -463,6 +471,7 @@ async function main() {
     ...p, files: p.files.map(f => ({ label: f.label, ...(f.path ? { file: relative(CACHE, f.path) } : { url: f.url }) })),
   })), null, 2));
   summary(posts);
+  console.log(`  이번에 옛 서버에서 받은 양 ${(downloaded / 1e6).toFixed(1)}MB`);
   if (UPLOAD && !posts.length) throw new Error('옮길 글이 하나도 없어서 올리지 않았어요.');
   if (UPLOAD) await upload(posts);
   else console.log('\n미리보기만 했어요. tools/.old-board/preview.json을 확인하고, 괜찮으면 --upload를 붙여 다시 돌려요.');
@@ -477,10 +486,10 @@ function saveWarnings() {
 
 main().catch(err => {
   console.error(`\n${err.message}`);
-  if (err instanceof Blocked) {
-    console.error(`옛 서버가 지금 접속을 막고 있어서 멈췄어요. Firebase에는 아무것도 올리지 않았어요.
-- 브라우저로 http://cmri.knu.ac.kr 이 열리는지 봐 주세요. 트래픽 초과나 차단 화면이면 풀릴 때(보통 다음 날) 다시 돌려요.
+  if (err instanceof Stop) {
+    console.error(`Firebase에는 아무것도 올리지 않았어요. 이번에 옛 서버에서 받은 양: ${(downloaded / 1e6).toFixed(1)}MB
 - 받아 둔 글과 파일은 tools/.old-board/에 있어서, 다시 돌리면 못 받은 것만 이어서 받아요.
+- 옛 서버가 막혔으면 브라우저로 http://cmri.knu.ac.kr 이 열릴 때(트래픽 초과는 보통 다음 날) 다시 돌려요.
 - 해외 인터넷에서 돌렸다면 학교·집 같은 국내 인터넷에서 돌려야 해요.`);
   }
   saveWarnings();
