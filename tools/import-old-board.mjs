@@ -34,21 +34,39 @@ const warn = (id, text) => warnings.push(`[${id}] ${text}`);
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36';
 const eucKr = new TextDecoder('euc-kr');
 
+// 옛 서버가 접속을 막으면(해외 접속, 트래픽 초과 같은) 더 받지 않고 멈춰요
+class Blocked extends Error {}
+
 // 잠깐 끊겨도 세 번까지 다시 받아요
 async function get(url, referer = `${SITE}/`) {
   for (let tries = 1; ; tries++) {
+    let status = 0;
     try {
       const res = await fetch(url, { headers: { 'User-Agent': UA, Referer: referer } });
+      status = res.status;
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return { type: res.headers.get('content-type') || '', bytes: Buffer.from(await res.arrayBuffer()) };
     } catch (err) {
-      if (tries === 3) throw new Error(`${err.message} (${url})`);
+      if (tries === 3) {
+        const message = `${err.message} (${url})`;
+        const blocked = url.startsWith(SITE) && (!status || [403, 429, 503, 509].includes(status));
+        throw blocked ? new Blocked(message) : new Error(message);
+      }
       await new Promise(r => setTimeout(r, 2000 * tries));
     }
   }
 }
 
-const getPage = async url => eucKr.decode((await get(url)).bytes);
+// 게시판 화면이 아니면 받은 화면을 .old-board/blocked.html에 두고 멈춰요
+async function getBoardPage(url) {
+  const html = eucKr.decode((await get(url)).bytes);
+  if (!html.includes('bbs-wrap')) {
+    writeFileSync(cachePath('blocked.html'), html);
+    const text = clean(cheerio.load(html)('body').text()).slice(0, 100);
+    throw new Blocked(`게시판 대신 다른 화면이 왔어요${text ? `: “${text}”` : ''} (${url})`);
+  }
+  return html;
+}
 
 function cachePath(...parts) {
   const path = join(CACHE, ...parts);
@@ -68,11 +86,18 @@ async function mapLimit(items, n, fn) {
   return out;
 }
 
-// 목록을 1쪽부터 넘기며 글 번호를 모아요. 고정 글은 쪽마다 다시 나와서, 새 번호가 없으면 끝이에요
+// 목록을 1쪽부터 넘기며 글 번호를 모아요. 고정 글은 쪽마다 다시 나와서, 새 번호가 없으면 끝이에요.
+// 다 모은 목록은 .old-board/lists/에 두고 다음부터는 그것을 써요
 async function listPosts(board) {
+  const saved = join(CACHE, 'lists', `${board.db}.json`);
+  if (existsSync(saved)) {
+    const found = new Map(JSON.parse(readFileSync(saved, 'utf8')));
+    console.log(`${board.label} 목록 (받아 둔 것), 글 ${found.size}개`);
+    return found;
+  }
   const found = new Map();   // 옛 번호 → 고정 여부
   for (let page = 1; page <= 200; page++) {
-    const $ = cheerio.load(await getPage(`${SITE}/html/${board.page}.html?page=${page}&db=${board.db}`));
+    const $ = cheerio.load(await getBoardPage(`${SITE}/html/${board.page}.html?page=${page}&db=${board.db}`));
     let added = 0;
     $('a[href*="type=read"]').each((_, a) => {
       const id = $(a).attr('href').match(/[?&]id=(\d+)/)?.[1];
@@ -85,6 +110,7 @@ async function listPosts(board) {
     process.stdout.write(`\r${board.label} 목록 ${page}쪽, 글 ${found.size}개`);
   }
   console.log();
+  writeFileSync(cachePath('lists', `${board.db}.json`), JSON.stringify([...found]));
   return found;
 }
 
@@ -223,14 +249,18 @@ async function download(id, key, url, referer) {
       bytes = Buffer.from(url.slice(url.indexOf(',') + 1), 'base64');
     } else {
       const res = await get(url, referer);
-      // 파일이 없으면 옛 서버가 오류 웹페이지를 돌려줘요
-      if (res.type.includes('text/html')) throw new Error('파일 대신 웹페이지가 왔어요');
+      // 파일이 없으면 옛 서버가 오류 웹페이지를 돌려줘요. 서버가 막힌 것이면 목록도 안 열려서 멈춰요
+      if (res.type.includes('text/html')) {
+        if (url.startsWith(SITE)) await getBoardPage(`${SITE}/html/${BOARDS[0].page}.html?db=${BOARDS[0].db}`);
+        throw new Error('파일 대신 웹페이지가 왔어요');
+      }
       bytes = res.bytes;
     }
     if (!bytes.length) throw new Error('빈 파일이에요');
     writeFileSync(path, bytes);
     return path;
   } catch (err) {
+    if (err instanceof Blocked) throw err;
     warn(id, `파일을 받지 못했어요: ${err.message}`);
     return null;
   }
@@ -304,8 +334,12 @@ async function preparePost(board, oldId, pinned) {
   const id = `old-${oldId}`;
   const url = `${SITE}/html/${board.page}.html?id=${oldId}&type=read&db=${board.db}`;
   const pagePath = cachePath('pages', `${board.db}-${oldId}.html`);
-  if (!existsSync(pagePath)) writeFileSync(pagePath, await getPage(url));
-  const read = parseRead(readFileSync(pagePath, 'utf8'), board.db, url);
+  let html = existsSync(pagePath) ? readFileSync(pagePath, 'utf8') : '';
+  if (!html.includes('bbs-read')) {   // 처음이거나, 지난번에 글 대신 다른 화면을 받아 둔 것
+    html = await getBoardPage(url);
+    writeFileSync(pagePath, html);
+  }
+  const read = parseRead(html, board.db, url);
   if (!read?.title || !read.date) {
     warn(id, `글을 읽지 못해서 건너뛰어요 (${url})`);
     return null;
@@ -413,8 +447,9 @@ async function main() {
   for (const board of BOARDS) {
     const ids = await listPosts(board);
     let done = 0;
-    const prepared = await mapLimit([...ids], 4, async ([oldId, pinned]) => {
+    const prepared = await mapLimit([...ids], 2, async ([oldId, pinned]) => {
       const post = await preparePost(board, oldId, pinned).catch(err => {
+        if (err instanceof Blocked) throw err;
         warn(`old-${oldId}`, err.message);
         return null;
       });
@@ -428,18 +463,26 @@ async function main() {
     ...p, files: p.files.map(f => ({ label: f.label, ...(f.path ? { file: relative(CACHE, f.path) } : { url: f.url }) })),
   })), null, 2));
   summary(posts);
+  if (UPLOAD && !posts.length) throw new Error('옮길 글이 하나도 없어서 올리지 않았어요.');
   if (UPLOAD) await upload(posts);
   else console.log('\n미리보기만 했어요. tools/.old-board/preview.json을 확인하고, 괜찮으면 --upload를 붙여 다시 돌려요.');
-  if (warnings.length) {
-    writeFileSync(join(CACHE, 'warnings.txt'), warnings.join('\n') + '\n');
-    console.log(`확인할 것 ${warnings.length}개 → tools/.old-board/warnings.txt`);
-  }
+  saveWarnings();
+}
+
+function saveWarnings() {
+  if (!warnings.length) return;
+  writeFileSync(join(CACHE, 'warnings.txt'), warnings.join('\n') + '\n');
+  console.log(`확인할 것 ${warnings.length}개 → tools/.old-board/warnings.txt`);
 }
 
 main().catch(err => {
   console.error(`\n${err.message}`);
-  if (/HTTP 403|fetch failed/.test(err.message)) {
-    console.error('옛 홈페이지에 들어가지 못했어요. 옛 서버는 해외 접속을 막아서, 학교·집 같은 국내 인터넷에서 다시 돌려 주세요.');
+  if (err instanceof Blocked) {
+    console.error(`옛 서버가 지금 접속을 막고 있어서 멈췄어요. Firebase에는 아무것도 올리지 않았어요.
+- 브라우저로 http://cmri.knu.ac.kr 이 열리는지 봐 주세요. 트래픽 초과나 차단 화면이면 풀릴 때(보통 다음 날) 다시 돌려요.
+- 받아 둔 글과 파일은 tools/.old-board/에 있어서, 다시 돌리면 못 받은 것만 이어서 받아요.
+- 해외 인터넷에서 돌렸다면 학교·집 같은 국내 인터넷에서 돌려야 해요.`);
   }
+  saveWarnings();
   process.exit(1);
 });
