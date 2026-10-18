@@ -1,0 +1,12 @@
+{
+  "name": "cmri-tools",
+  "private": true,
+  "description": "옛 홈페이지(cmri.knu.ac.kr) 게시판을 새 사이트(Firestore·Storage)로 옮기는 도구",
+  "type": "module",
+  "engines": { "node": ">=20.18.1" },
+  "dependencies": {
+    "cheerio": "^1.2.0",
+    "firebase-admin": "^14.5.0",
+    "pdf-lib": "^1.17.1"
+  }
+}

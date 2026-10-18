@@ -2,3 +2,7 @@ functions/node_modules/
 functions/.secret.local
 functions/.env
 functions/.env.*
+tools/node_modules/
+tools/.old-board/
+tools/service-account.json
+tools/*adminsdk*.json
