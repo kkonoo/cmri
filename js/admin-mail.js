@@ -488,7 +488,7 @@ export function initMail(ctx) {
     try {
       const snap = await fs.getDocs(fs.query(fs.collection(db, 'campaigns'), fs.orderBy('createdAt', 'desc'), fs.limit(20)));
       if (snap.empty) {
-        rows.innerHTML = '<tr><td colspan="4" class="msg">아직 보낸 메일이 없어요.</td></tr>';
+        rows.innerHTML = '<tr><td colspan="5" class="msg">아직 보낸 메일이 없어요.</td></tr>';
         return;
       }
       rows.innerHTML = snap.docs.map(d => {
@@ -498,6 +498,7 @@ export function initMail(ctx) {
           <td>${c.test ? '<span class="chip">시험</span> ' : ''}${esc(c.subject)}<small class="sub">${esc((c.groups || []).join(', '))}</small></td>
           <td class="c-num">${c.total}명</td>
           <td class="c-state">확인 중…</td>
+          <td class="c-del"><button class="icon-x" type="button" data-del="${d.id}" aria-label="기록 지우기" title="기록 지우기">✕</button></td>
         </tr>`;
       }).join('');
       await Promise.all(snap.docs.map(async d => {
@@ -505,10 +506,31 @@ export function initMail(ctx) {
       }));
     } catch (err) {
       console.error(err);
-      rows.innerHTML = '<tr><td colspan="4" class="msg">기록을 불러오지 못했어요.</td></tr>';
+      rows.innerHTML = '<tr><td colspan="5" class="msg">기록을 불러오지 못했어요.</td></tr>';
     }
   }
   $('#refreshLogBtn').addEventListener('click', loadLog);
+
+  // 기록과 그 메일 문서를 함께 지워요. 이미 나간 메일은 되돌아오지 않아요
+  $('#logRows').addEventListener('click', async e => {
+    const b = e.target.closest('[data-del]');
+    if (!b || !confirm('이 기록을 지울까요? 이미 보낸 메일은 그대로예요.')) return;
+    b.disabled = true;
+    try {
+      const id = b.dataset.del;
+      const snap = await fs.getDocs(fs.query(fs.collection(db, 'mail'), fs.where('campaignId', '==', id)));
+      const batch = fs.writeBatch(db);
+      snap.forEach(d => batch.delete(d.ref));
+      batch.delete(fs.doc(db, 'campaigns', id));
+      await batch.commit();
+      toast('기록을 지웠어요.');
+      loadLog();
+    } catch (err) {
+      console.error(err);
+      b.disabled = false;
+      toast('지우지 못했어요. 다시 시도해 주세요.');
+    }
+  });
 
   loadPeople();
   loadLog();

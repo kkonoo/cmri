@@ -149,15 +149,15 @@ service cloud.firestore {
         && request.resource.data.groups is list;
     }
 
-    // 발송 기록
+    // 발송 기록 (관리자가 지우면 그 메일 문서도 함께 지워요)
     match /campaigns/{id} {
-      allow read, create: if isAdmin();
+      allow read, create, delete: if isAdmin();
     }
 
     // 메일 함수(functions/index.js)가 읽어서 cmri@knu.ac.kr 이름으로 보내는 곳.
     // 보내는 주소(from)·회신 주소는 바꿀 수 없어요.
     match /mail/{id} {
-      allow read: if isAdmin();
+      allow read, delete: if isAdmin();
       allow create: if (isAdmin() && validCampaignMail()) || validNotice(id);
     }
   }
