@@ -1,5 +1,6 @@
 // 관리자: 게시글 쓰기·고치기·삭제
 import { BOARDS, esc, dotDate, weekday, today } from './posts.js';
+import { createPager } from './admin-pager.js';
 
 // '규정'은 연구소 소개 → 운영 규정, '모집'은 프로그램 → 모집 공고에도 보여요
 const CATEGORIES = {
@@ -9,14 +10,6 @@ const CATEGORIES = {
   newsletters: [],
 };
 const MAX_LINKS = 10;   // firestore.rules와 같게
-const PAGE_SIZES = [10, 25, 50, 100];
-const SIZE_KEY = 'cmri-admin-page-size';
-
-// 1 … 4 5 6 … 20 처럼 처음·끝과 지금 쪽 둘레만 보여 줘요
-function pageNumbers(cur, last) {
-  const keep = [...new Set([1, cur - 2, cur - 1, cur, cur + 1, cur + 2, last])].filter(n => n >= 1 && n <= last).sort((a, b) => a - b);
-  return keep.flatMap((n, i) => (i && n - keep[i - 1] > 1 ? ['…', n] : [n]));
-}
 
 export function initPosts(ctx) {
   const { db, fs, email, toast } = ctx;
@@ -26,20 +19,17 @@ export function initPosts(ctx) {
   const form = $('#postForm');
   const f = form.elements;
   const linkRows = $('#linkRows');
-  const pager = $('#postPager');
+  const pager = createPager($('#postPager'), rows.closest('table'), render);
   let board = 'notices';
   let posts = [];
   let editing = null;
-  let page = 1;
-  let size = 25;
-  try { size = PAGE_SIZES.find(n => n === Number(localStorage.getItem(SIZE_KEY))) || size; } catch { /* 기본 25개 */ }
 
   // 게시판의 글을 모두 불러와서 쪽으로 나눠 보여 줘요. 고치고 나서는 보던 쪽에 머물러요
   async function load(keepPage = false) {
     rows.closest('table').querySelector('.c-cat').textContent = board === 'seminars' ? '연사' : '분류';
     rows.innerHTML = '<tr><td colspan="3" class="msg">불러오는 중…</td></tr>';
-    pager.hidden = true;
-    if (!keepPage) page = 1;
+    $('#postPager').hidden = true;
+    if (!keepPage) pager.reset();
     try {
       const snap = await fs.getDocs(fs.query(fs.collection(db, board), fs.orderBy('date', 'desc')));
       posts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -51,40 +41,15 @@ export function initPosts(ctx) {
   }
 
   function render() {
-    const last = Math.max(1, Math.ceil(posts.length / size));
-    page = Math.min(page, last);
+    const shown = pager.slice(posts);
     rows.innerHTML = posts.length
-      ? posts.slice((page - 1) * size, page * size).map(p => `<tr data-id="${p.id}" tabindex="0">
+      ? shown.map(p => `<tr data-id="${p.id}" tabindex="0">
           <td class="c-date">${dotDate(p.date)}</td>
           <td class="c-cat">${esc(board === 'seminars' ? p.speaker : p.category)}</td>
           <td>${p.pinned ? '<span class="tag pin">고정</span> ' : ''}${esc(p.title)}</td>
         </tr>`).join('')
       : '<tr><td colspan="3" class="msg">아직 글이 없어요. 새 글 쓰기로 시작해 보세요.</td></tr>';
-    pager.hidden = !posts.length;
-    pager.innerHTML = `<span class="pager-count">전체 ${posts.length}개</span>
-      <div class="pager-pages">
-        <button type="button" data-page="${page - 1}" aria-label="이전 쪽"${page === 1 ? ' disabled' : ''}>‹</button>
-        ${pageNumbers(page, last).map(n => (n === '…' ? '<span>…</span>'
-          : `<button type="button" data-page="${n}"${n === page ? ' class="on" aria-current="page"' : ''}>${n}</button>`)).join('')}
-        <button type="button" data-page="${page + 1}" aria-label="다음 쪽"${page === last ? ' disabled' : ''}>›</button>
-      </div>
-      <select aria-label="한 쪽에 보일 글 수">${PAGE_SIZES.map(n => `<option value="${n}"${n === size ? ' selected' : ''}>${n}개씩</option>`).join('')}</select>`;
   }
-
-  pager.addEventListener('click', e => {
-    const b = e.target.closest('button[data-page]');
-    if (!b || b.disabled) return;
-    page = Number(b.dataset.page);
-    render();
-    const top = rows.closest('table').getBoundingClientRect().top;
-    if (top < 0) window.scrollBy({ top: top - 100 });   // 목록 맨 위가 보이게
-  });
-  pager.addEventListener('change', e => {
-    size = Number(e.target.value);
-    page = 1;
-    try { localStorage.setItem(SIZE_KEY, size); } catch { /* 다음에는 25개씩 */ }
-    render();
-  });
 
   function addLink(l = {}) {
     if (linkRows.children.length >= MAX_LINKS) return;

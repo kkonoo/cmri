@@ -3,6 +3,7 @@ import { storage } from './firebase.js';
 import { esc, safeUrl } from './posts.js';
 import { GROUPS, TYPES, summary, statusLabel, detailRows, won } from './apply-types.js';
 import { SIGNATURE } from './admin-mail.js';
+import { createPager } from './admin-pager.js';
 
 const p2 = n => String(n).padStart(2, '0');
 const day = ts => (ts ? (d => `${d.getFullYear()}.${p2(d.getMonth() + 1)}.${p2(d.getDate())}`)(ts.toDate()) : '');
@@ -42,6 +43,7 @@ function cell(v) {
 export function initApplications({ db, fs, email, toast }) {
   const $ = s => document.querySelector(s);
   const form = $('#appForm');
+  const pager = createPager($('#appPager'), $('#appRows').closest('table'), render);
   let apps = [];
   let current = null;
 
@@ -82,9 +84,9 @@ export function initApplications({ db, fs, email, toast }) {
     $('#appCount').textContent = waiting;
     $('#appCount').hidden = !waiting;
 
-    const shown = filtered();
-    $('#appRows').innerHTML = shown.length
-      ? shown.map(a => {
+    const list = filtered();
+    $('#appRows').innerHTML = list.length
+      ? pager.slice(list).map(a => {
         const t = TYPES[a.type];
         return `<tr data-id="${esc(a.id)}" tabindex="0">
           <td class="c-date">${day(a.createdAt)}</td>
@@ -95,6 +97,7 @@ export function initApplications({ db, fs, email, toast }) {
         </tr>`;
       }).join('')
       : `<tr><td colspan="5" class="msg">${apps.length ? '고른 조건에 맞는 것이 없어요.' : '아직 들어온 신청·제출이 없어요.'}</td></tr>`;
+    if (!list.length) $('#appPager').hidden = true;
   }
 
   async function open(a) {
@@ -148,8 +151,13 @@ export function initApplications({ db, fs, email, toast }) {
     }
   }
 
-  $('#appGroupFilter').addEventListener('change', render);
-  $('#appStatusFilter').addEventListener('change', render);
+  // 거르는 조건을 바꾸면 첫 쪽부터
+  for (const id of ['#appGroupFilter', '#appStatusFilter']) {
+    $(id).addEventListener('change', () => {
+      pager.reset();
+      render();
+    });
+  }
   $('#appRefreshBtn').addEventListener('click', load);
   $('#appRows').addEventListener('click', e => {
     const tr = e.target.closest('tr[data-id]');
