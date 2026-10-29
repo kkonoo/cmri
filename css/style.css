@@ -461,12 +461,27 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--orange); outlin
 .tag.pin { color: #fff; background: var(--navy); }
 :root[data-theme="dark"] .tag.pin { background: var(--accent-soft); color: var(--accent); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .tag.pin { background: var(--accent-soft); color: var(--accent); } }
-.more-btn, .back-btn {
+.back-btn {
   display: flex; align-items: center; justify-content: center; width: fit-content; height: 44px; margin: 28px auto 0; padding: 0 28px;
   border: 1px solid var(--line); border-radius: 10px; background: var(--surface);
   font: inherit; font-weight: 600; color: var(--text); text-decoration: none; cursor: pointer;
 }
-.more-btn:hover, .back-btn:hover { border-color: var(--accent); color: var(--accent); }
+.back-btn:hover { border-color: var(--accent); color: var(--accent); }
+/* 게시판 쪽 번호: 전체 개수 · 쪽 번호 · 한 쪽에 몇 개 */
+.page-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 20px; margin-top: 36px; font-size: 14.5px; }
+.page-count { color: var(--muted); }
+.page-size { display: flex; align-items: center; gap: 8px; color: var(--muted); }
+.page-size select { height: 40px; padding: 0 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--text); font: inherit; }
+.page-nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.page-nav a, .page-nav span {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 40px; height: 40px; padding: 0 10px;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--surface);
+  font-weight: 600; color: var(--text); text-decoration: none; font-variant-numeric: tabular-nums;
+}
+.page-nav a:hover { border-color: var(--accent); color: var(--accent); }
+.page-nav .on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.page-nav .off { opacity: .4; }
+.page-nav .gap { min-width: 0; padding: 0 2px; border: 0; background: none; color: var(--faint); }
 .msg { padding: 56px 0; text-align: center; color: var(--muted); }
 
 .article { max-width: 820px; margin: 0 auto; padding: 48px 0 88px; }
@@ -708,6 +723,8 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--orange); outlin
   .news-card { min-height: 0; scroll-snap-align: start; }
   .post-list a { flex-wrap: wrap; row-gap: 6px; }
   .post-list .title { order: 3; flex-basis: 100%; white-space: normal; }
+  .page-nav { order: 3; flex-basis: 100%; gap: 4px; }
+  .page-nav a, .page-nav span { min-width: 32px; height: 36px; padding: 0 6px; }
   .post-list time { margin-left: auto; }
   .spec li { flex-direction: column; gap: 0; }
   .spec li > span { text-align: left; }

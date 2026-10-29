@@ -1,11 +1,7 @@
 // 관리자 목록 쪽 나누기: 10/25/50/100개씩. 고른 개수는 목록마다 이 브라우저에 기억해요
-const SIZES = [10, 25, 50, 100];
+import { pageNumbers } from './posts.js';
 
-// 1 … 4 5 6 … 20 처럼 처음·끝과 지금 쪽 둘레만 보여 줘요
-function pageNumbers(cur, last) {
-  const keep = [...new Set([1, cur - 2, cur - 1, cur, cur + 1, cur + 2, last])].filter(n => n >= 1 && n <= last).sort((a, b) => a - b);
-  return keep.flatMap((n, i) => (i && n - keep[i - 1] > 1 ? ['…', n] : [n]));
-}
+const SIZES = [10, 25, 50, 100];
 
 // el: 쪽 단추를 그릴 곳, table: 쪽을 넘기면 맨 위가 보이게 할 목록, render: 다시 그리기
 export function createPager(el, table, render) {

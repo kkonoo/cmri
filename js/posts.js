@@ -43,6 +43,12 @@ export const IMAGE = /\.(jpe?g|png|gif|webp)$/i;
 export const isImage = l => IMAGE.test(l.label || '') || IMAGE.test(new URL(l.url).pathname);
 export const postUrl = (type, id) => `post.html?type=${type}&id=${encodeURIComponent(id)}`;
 
+// 쪽 번호: 1 … 4 5 6 … 20 처럼 처음·끝과 지금 쪽 둘레만
+export function pageNumbers(cur, last) {
+  const keep = [...new Set([1, cur - 2, cur - 1, cur, cur + 1, cur + 2, last])].filter(n => n >= 1 && n <= last).sort((a, b) => a - b);
+  return keep.flatMap((n, i) => (i && n - keep[i - 1] > 1 ? ['…', n] : [n]));
+}
+
 // 줄바꿈은 그대로, 빈 줄은 문단, 주소는 링크로
 export function renderBody(text) {
   return String(text || '').trim().split(/\n{2,}/).map(para =>
@@ -104,6 +110,12 @@ export async function listPosts(type, n, after) {
   if (after) parts.splice(2, 0, fs.startAfter(after));
   const snap = await fs.getDocs(fs.query(...parts));
   return { posts: snap.docs.map(toPost), last: snap.docs.at(-1) };
+}
+
+// 게시판의 글 수 (글을 내려받지 않고 세기만 해요)
+export async function countPosts(type) {
+  const { db, fs } = await firestore();
+  return (await fs.getCountFromServer(fs.collection(db, type))).data().count;
 }
 
 export async function pinnedPosts(type) {

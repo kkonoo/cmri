@@ -1,17 +1,22 @@
 // 게시판 목록(board.html)과 글 보기(post.html)
 import {
-  enabled, BOARDS, boardType, listPosts, pinnedPosts, getPost, MSG, bi,
+  enabled, BOARDS, boardType, listPosts, countPosts, pinnedPosts, getPost, MSG, bi, pageNumbers,
   postItem, seminarItem, letterCard, esc, dotDate, weekdayBi, renderBody, safeUrl, IMAGE, isImage,
 } from './posts.js';
 
-const PAGE = 20;
+const SIZES = [10, 25, 50, 100];
+const SIZE_KEY = 'cmri-board-page-size';
 const params = new URLSearchParams(location.search);
 const type = boardType(params.get('type'));
 const label = BOARDS[type];
 const main = document.getElementById('content');
 const setTitle = (ko, en) => window.cmriSetTitle?.(`${ko} | 세포·기질연구소`, `${en} | Cell & Matrix Research Institute`);
 const msg = html => `<p class="msg">${html}</p>`;
-const backBtn = `<a class="back-btn" href="board.html?type=${type}">${bi('목록으로', 'Back to list')}</a>`;
+// 목록의 몇째 쪽에서 왔으면 그 쪽으로 돌아가요
+const from = document.referrer ? new URL(document.referrer) : null;
+const listHref = from?.origin === location.origin && from.pathname.endsWith('/board.html') && from.searchParams.get('type') === type
+  ? from.href : `board.html?type=${type}`;
+const backBtn = `<a class="back-btn" href="${esc(listHref)}">${bi('목록으로', 'Back to list')}</a>`;
 
 document.getElementById('pageTitle').innerHTML = bi(label.ko, label.en);
 document.querySelectorAll('.tabs a').forEach(a => a.classList.toggle('on', a.dataset.type === type));
@@ -30,43 +35,66 @@ if (!enabled) {
   showPost().catch(fail);
 }
 
+// 한 쪽에 몇 개: 주소의 &size=, 없으면 이 브라우저에 고른 것, 그것도 없으면 25개
+function pageSize() {
+  const asked = Number(params.get('size'));
+  if (SIZES.includes(asked)) return asked;
+  try {
+    const saved = Number(localStorage.getItem(SIZE_KEY));
+    if (SIZES.includes(saved)) return saved;
+  } catch { /* 기본 25개 */ }
+  return 25;
+}
+
+// 고정 글은 쪽마다 맨 위에 따로 보여 주고, 쪽 번호 목록에서는 빼요.
+// 전체 글 수만 세고, 보려는 쪽까지만 불러와요 (주소의 &page=)
 async function showBoard() {
+  const PAGE = pageSize();
   const seminar = type === 'seminars';
   const letters = type === 'newsletters';
   const render = (p, i) => (seminar ? seminarItem(p, true) : letters ? letterCard(p, i) : postItem(type, p));
-  const [pinned, first] = await Promise.all([letters ? [] : pinnedPosts(type), listPosts(type, PAGE)]);
-  if (!pinned.length && !first.posts.length) {
+  const [pinned, total] = await Promise.all([letters ? [] : pinnedPosts(type), countPosts(type)]);
+  if (!total) {
     main.innerHTML = msg(MSG.empty);
     return;
   }
+  const pinnedIds = new Set(pinned.map(p => p.id));
+  const lastPage = Math.max(1, Math.ceil((total - pinned.length) / PAGE));
+  const page = Math.min(lastPage, Math.max(1, parseInt(params.get('page'), 10) || 1));
+  const kept = [];
+  for (let after; kept.length < page * PAGE;) {
+    const n = page * PAGE - kept.length + pinnedIds.size;
+    const { posts, last } = await listPosts(type, n, after);
+    kept.push(...posts.filter(p => !pinnedIds.has(p.id)));
+    if (posts.length < n) break;
+    after = last;
+  }
+  const shown = kept.slice((page - 1) * PAGE, page * PAGE);
+
   const listTag = letters ? 'div' : 'ul';
   const listClass = seminar ? 'seminar-list' : letters ? 'letter-grid' : 'post-list';
-  main.innerHTML = `<${listTag} class="${listClass}"></${listTag}>
-    <button class="more-btn" type="button" hidden>${bi('더 보기', 'Load more')}</button>`;
-  const list = main.querySelector(`.${listClass}`);
-  const more = main.querySelector('.more-btn');
-  const pinnedIds = new Set(pinned.map(p => p.id));
-  let count = 0;
-  const add = posts => list.insertAdjacentHTML('beforeend',
-    posts.filter(p => !pinnedIds.has(p.id)).map(p => render(p, count++)).join(''));
-
-  list.innerHTML = pinned.map(p => (seminar ? render(p) : postItem(type, p, true))).join('');
-  add(first.posts);
-  let last = first.last;
-  more.hidden = first.posts.length < PAGE;
-  more.addEventListener('click', async () => {
-    more.disabled = true;
-    try {
-      const next = await listPosts(type, PAGE, last);
-      add(next.posts);
-      last = next.last;
-      more.hidden = next.posts.length < PAGE;
-      more.innerHTML = bi('더 보기', 'Load more');
-    } catch (err) {
-      console.error(err);
-      more.innerHTML = bi('다시 시도', 'Try again');
-    }
-    more.disabled = false;
+  const href = n => `board.html?type=${type}&page=${n}&size=${PAGE}`;
+  const step = (n, label, aria) => (n >= 1 && n <= lastPage
+    ? `<a href="${href(n)}" aria-label="${aria}">${label}</a>` : `<span class="off" aria-hidden="true">${label}</span>`);
+  main.innerHTML = `<${listTag} class="${listClass}">
+      ${pinned.map(p => (seminar ? render(p) : postItem(type, p, true))).join('')}
+      ${shown.map((p, i) => render(p, (page - 1) * PAGE + i)).join('')}
+    </${listTag}>
+    <div class="page-bar">
+      <span class="page-count">${bi(`전체 ${total}개`, `${total} posts`)}</span>
+      ${lastPage > 1 ? `<nav class="page-nav" aria-label="쪽 Pages">
+        ${step(page - 1, '‹', '이전 쪽 Previous page')}
+        ${pageNumbers(page, lastPage).map(n => (n === '…' ? '<span class="gap">…</span>'
+          : n === page ? `<span class="on" aria-current="page">${n}</span>` : `<a href="${href(n)}">${n}</a>`)).join('')}
+        ${step(page + 1, '›', '다음 쪽 Next page')}
+      </nav>` : ''}
+      <label class="page-size">${bi('한 쪽에', 'Per page')}
+        <select>${SIZES.map(n => `<option value="${n}"${n === PAGE ? ' selected' : ''}>${n}</option>`).join('')}</select>
+      </label>
+    </div>`;
+  main.querySelector('.page-size select').addEventListener('change', e => {
+    try { localStorage.setItem(SIZE_KEY, e.target.value); } catch { /* 주소의 size로 이어가요 */ }
+    location.href = `board.html?type=${type}&size=${e.target.value}`;
   });
 }
 
