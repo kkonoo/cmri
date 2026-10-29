@@ -36,15 +36,20 @@ const warn = (id, text) => warnings.push(`[${id}] ${text}`);
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36';
 const eucKr = new TextDecoder('euc-kr');
 
-// 옛 서버가 막았거나(해외 접속, 트래픽 초과) 받을 양을 다 받으면 더 받지 않고 멈춰요
+// 옛 서버가 막았거나(해외 접속, 트래픽 초과) 받을 양을 다 받으면 더 받지 않아요.
+// 그 뒤로는 받아 둔 것만으로 되는 글만 정리해요
 class Stop extends Error {}
+let stopped = null;
 let downloaded = 0;   // 이번에 옛 서버에서 받은 바이트
 
 // 잠깐 끊겨도 세 번까지 다시 받아요
 async function get(url, referer = `${SITE}/`) {
   const fromSite = url.startsWith(SITE);
+  if (fromSite && stopped) throw stopped;
   if (fromSite && downloaded >= MAX_MB * 1e6) {
-    throw new Stop(`이번에 받을 양(${MAX_MB}MB)을 다 받아서 멈췄어요. 옛 홈페이지의 하루 트래픽 한도를 넘지 않게 나눠 받아요.`);
+    throw (stopped = new Stop(MAX_MB
+      ? `이번에 받을 양(${MAX_MB}MB)을 다 받아서 더 받지 않았어요. 옛 홈페이지의 하루 트래픽 한도를 넘지 않게 나눠 받아요.`
+      : '옛 서버에서 받지 않고(--max-mb 0) 받아 둔 것만 썼어요.'));
   }
   for (let tries = 1; ; tries++) {
     let status = 0;
@@ -58,7 +63,8 @@ async function get(url, referer = `${SITE}/`) {
     } catch (err) {
       if (tries === 3) {
         const blocked = fromSite && (!status || [403, 429, 503, 509].includes(status));
-        throw blocked ? new Stop(`옛 서버가 접속을 막았어요: ${err.message} (${url})`) : new Error(`${err.message} (${url})`);
+        if (blocked) throw (stopped = new Stop(`옛 서버가 접속을 막았어요: ${err.message} (${url})`));
+        throw new Error(`${err.message} (${url})`);
       }
       await new Promise(r => setTimeout(r, 2000 * tries));
     }
@@ -71,7 +77,7 @@ async function getBoardPage(url) {
   if (!html.includes('bbs-wrap')) {
     writeFileSync(cachePath('blocked.html'), html);
     const text = clean(cheerio.load(html)('body').text()).slice(0, 100);
-    throw new Stop(`옛 서버가 게시판 대신 다른 화면을 줬어요${text ? `: “${text}”` : ''} (${url})`);
+    throw (stopped = new Stop(`옛 서버가 게시판 대신 다른 화면을 줬어요${text ? `: “${text}”` : ''} (${url})`));
   }
   return html;
 }
@@ -452,22 +458,22 @@ function summary(posts) {
 async function main() {
   mkdirSync(CACHE, { recursive: true });
   const posts = [];
-  // 받을 양을 다 받았거나 옛 서버가 막으면, 그때까지 다 받은 글만 정리(·올리기)하고 나머지는 다음에 받아요
-  let stopped = null;
-  const stop = err => {
-    if (!(err instanceof Stop)) throw err;
-    stopped ??= err;
-    return null;
-  };
+  let waiting = 0;        // 더 받아야 해서 다음으로 미룬 글
+  const unlisted = [];    // 목록을 못 받은 게시판
   for (const board of BOARDS) {
-    const ids = await listPosts(board).catch(stop);
-    if (stopped) break;
+    const ids = await listPosts(board).catch(err => {
+      if (err instanceof Stop) return null;
+      throw err;
+    });
+    if (!ids) {
+      unlisted.push(board.label);
+      continue;
+    }
     let done = 0;
     const prepared = await mapLimit([...ids], 2, async ([oldId, pinned]) => {
-      if (stopped) return null;
       const post = await preparePost(board, oldId, pinned).catch(err => {
-        if (err instanceof Stop) return stop(err);
-        warn(`old-${oldId}`, err.message);
+        if (err instanceof Stop) waiting++;
+        else warn(`old-${oldId}`, err.message);
         return null;
       });
       process.stdout.write(`\r${board.label} 글 ${++done}/${ids.size}`);
@@ -475,11 +481,10 @@ async function main() {
     });
     console.log();
     posts.push(...prepared.filter(Boolean));
-    if (stopped) break;
   }
   if (stopped) {
     console.log(`\n${stopped.message}
-다 받은 글까지만 정리했어요. 다음 날 다시 돌리면 나머지를 이어서 받아요.
+받아 둔 것만으로 되는 글까지 정리했어요. 남은 것(${[waiting && `글 ${waiting}개`, ...unlisted.map(b => `${b} 목록`)].filter(Boolean).join(', ')})은 다음 날 다시 돌리면 이어서 받아요.
 (옛 서버가 막혔으면 브라우저로 http://cmri.knu.ac.kr 이 열릴 때 다시 돌려요. 해외 인터넷이면 국내 인터넷에서 돌려야 해요.)`);
   }
   writeFileSync(join(CACHE, 'preview.json'), JSON.stringify(posts.map(p => ({
