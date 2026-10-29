@@ -16,7 +16,7 @@ const SITE = option('--site', 'http://cmri.knu.ac.kr');
 const HERE = dirname(fileURLToPath(import.meta.url));
 const KEY = option('--key', join(HERE, 'service-account.json'));
 // 옛 호스팅은 하루 트래픽 한도가 있어서, 한 번에 이만큼만 받고 멈춰요 (다음 날 다시 돌리면 이어서)
-const MAX_MB = Number(option('--max-mb', 300));
+const MAX_MB = Number(option('--max-mb', 500));
 const CACHE = join(HERE, '.old-board');
 const BUCKET = 'cmri-knumed.firebasestorage.app';   // js/firebase-config.js의 storageBucket
 const MAX_LINKS = 10;                               // firestore.rules와 같게
