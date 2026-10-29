@@ -10,16 +10,27 @@ service firebase.storage {
         && firestore.exists(/databases/(default)/documents/admins/$(request.auth.token.email.lower()));
     }
 
-    // 신청·제출 증빙: 학교 메일로 로그인한 신청자가 자기 폴더에 올리고(덮어쓰기 안 됨), 본인과 관리자만 열어요
-    match /applications/{uid}/{appId}/{file} {
-      allow read: if (request.auth != null && request.auth.uid == uid) || isAdmin();
+    // 신청서(applications/{신청 ID})에 적어 둔 n번째 파일과 경로·크기가 같고, 신청하고 1시간 안이면 받아요
+    function declared(appId, file) {
+      let app = firestore.get(/databases/(default)/documents/applications/$(appId)).data;
+      let f = app.files[int(file.split('-')[0]) - 1];
+      return f.path == 'applications/' + appId + '/' + file
+        && f.size == request.resource.size
+        && request.time < app.createdAt + duration.value(1, 'h');
+    }
+
+    // 신청·제출 증빙: 로그인 없이 신청서에 적힌 파일만 올리고(덮어쓰기 안 됨), 관리자만 열고 지워요
+    match /applications/{appId}/{file} {
+      allow read, delete: if isAdmin();
       allow create: if resource == null
-        && request.auth != null && request.auth.uid == uid
-        && request.auth.token.email_verified == true
-        && request.auth.token.email.lower().matches('.+@knu[.]ac[.]kr')
         && request.resource.size < 20 * 1024 * 1024
-        && file.lower().matches('.+[.](pdf|jpg|jpeg|png|hwp|hwpx|doc|docx|xls|xlsx|ppt|pptx)');
-      allow delete: if isAdmin();
+        && file.lower().matches('[1-5]-.+[.](pdf|jpg|jpeg|png|hwp|hwpx|doc|docx|xls|xlsx|ppt|pptx)')
+        && declared(appId, file);
+    }
+
+    // 학교 메일 로그인으로 받던 때의 증빙 (applications/{신청자}/{신청 ID}/)
+    match /applications/{uid}/{appId}/{file} {
+      allow read, delete: if isAdmin();
     }
   }
 }

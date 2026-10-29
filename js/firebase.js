@@ -1,4 +1,4 @@
-// Firebase SDK를 필요할 때만 불러와요. 공개 페이지는 Firestore만, 관리자·연구비 신청 페이지는 로그인과 파일 저장소까지 씀.
+// Firebase SDK를 필요할 때만 불러와요. 공개 페이지는 Firestore만, 관리자 페이지는 로그인과 파일 저장소, 신청 페이지는 파일 저장소까지 씀.
 import { firebaseConfig, emulator } from './firebase-config.js';
 
 const SDK = 'https://www.gstatic.com/firebasejs/12.19.0';

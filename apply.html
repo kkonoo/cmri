@@ -95,72 +95,51 @@
 <main class="sub-section">
   <div class="wrap apply">
 
-    <!-- 로그인 전·설정 전 안내 -->
+    <!-- 설정 전 안내 -->
     <div class="apply-box" id="applyGate">
       <p class="msg"><span lang="ko">불러오는 중…</span><span lang="en">Loading…</span></p>
     </div>
 
-    <!-- 학교 메일로 로그인 -->
-    <form class="apply-box apply-form" id="loginForm" hidden novalidate>
-      <h2><span lang="ko">학교 메일로 로그인</span><span lang="en">Sign in with your KNU email</span></h2>
-      <p class="hint"><span lang="ko">학교 메일 주소를 넣으면 로그인 링크를 보내 드려요. 비밀번호는 필요 없어요.</span><span lang="en">Enter your KNU email address and we’ll send you a sign-in link. No password needed.</span></p>
-      <div class="inline">
-        <input name="email" type="email" autocomplete="email" placeholder="name@knu.ac.kr" aria-label="Email" required>
-        <button class="btn primary" type="submit"><span lang="ko">로그인 링크 받기</span><span lang="en">Send sign-in link</span></button>
-      </div>
-      <p class="form-msg" id="loginMsg" role="status"></p>
-    </form>
+    <form class="apply-box apply-form" id="applyForm" hidden>
+      <h2><span lang="ko">신청서</span><span lang="en">Application form</span></h2>
+      <p class="hint"><span lang="ko">로그인 없이 낼 수 있어요. 결과는 적어 주신 이메일로 알려 드려요.</span><span lang="en">No sign-in needed. We’ll send the result to the email address you enter.</span></p>
 
-    <div id="applyApp" hidden>
-      <div class="apply-account">
-        <span id="accountEmail"></span>
-        <button class="text-btn" type="button" id="logoutBtn"><span lang="ko">로그아웃</span><span lang="en">Sign out</span></button>
-      </div>
+      <fieldset class="field">
+        <legend><span lang="ko">종류</span><span lang="en">Type</span></legend>
+        <div id="typeChoices"></div>
+      </fieldset>
 
-      <section class="my-apps" id="myApps" hidden>
-        <h2 class="block-title"><span lang="ko">내 신청·제출</span><span lang="en">My applications</span></h2>
-        <ul class="my-app-list" id="myAppList"></ul>
-      </section>
-
-      <form class="apply-box apply-form" id="applyForm">
-        <h2><span lang="ko">새로 신청하기</span><span lang="en">New application</span></h2>
-
-        <fieldset class="field">
-          <legend><span lang="ko">종류</span><span lang="en">Type</span></legend>
-          <div id="typeChoices"></div>
-        </fieldset>
-
-        <fieldset class="field-group">
-          <legend><span lang="ko">신청자</span><span lang="en">Applicant</span></legend>
-          <div class="grid-2">
-            <label class="field"><span lang="ko">이름</span><span lang="en">Name</span><input name="name" required maxlength="50" autocomplete="name"></label>
-            <label class="field"><span lang="ko">직위·과정</span><span lang="en">Position or program</span><input name="position" maxlength="50"><small><span lang="ko">예: 교수, 연구원, 대학원생</span><span lang="en">e.g. professor, researcher, graduate student</span></small></label>
-            <label class="field"><span lang="ko">소속</span><span lang="en">Affiliation</span><input name="dept" required maxlength="100"></label>
-            <label class="field"><span lang="ko">연락처</span><span lang="en">Phone</span><input name="phone" type="tel" required maxlength="30" autocomplete="tel"></label>
-          </div>
-        </fieldset>
-
-        <fieldset class="field-group">
-          <legend><span lang="ko">세부 내용</span><span lang="en">Details</span></legend>
-          <div id="detailFields"></div>
-          <label class="field" id="amountField"><span lang="ko">신청 금액 (원)</span><span lang="en">Amount requested (KRW)</span><input name="amount" inputmode="numeric" maxlength="15"></label>
-          <label class="field"><span lang="ko">하고 싶은 말</span><span lang="en">Comments</span><textarea name="memo" rows="3" maxlength="2000"></textarea></label>
-        </fieldset>
-
-        <fieldset class="field-group">
-          <legend><span lang="ko">증빙 파일</span><span lang="en">Supporting files</span></legend>
-          <input name="files" type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.hwp,.hwpx,.doc,.docx,.xls,.xlsx,.ppt,.pptx" aria-label="Files">
-          <p class="hint"><span id="fileHint"></span><br><span lang="ko">PDF·사진·한글·워드·엑셀 파일을 5개까지, 한 개에 20MB까지 올릴 수 있어요.</span><span lang="en">Up to 5 files (PDF, images, HWP, Word, Excel), 20 MB each.</span></p>
-        </fieldset>
-
-        <label class="check"><input name="consent" type="checkbox" required> <span lang="ko">신청 처리를 위해 이름·소속·연락처·이메일을 모으고 쓰는 데 동의해요.</span><span lang="en">I agree to the collection and use of my name, affiliation, phone number and email address to process this application.</span></label>
-
-        <div class="apply-actions">
-          <button class="btn primary" type="submit" id="submitBtn"><span lang="ko">제출하기</span><span lang="en">Submit</span></button>
-          <p class="form-msg" id="applyMsg" role="status"></p>
+      <fieldset class="field-group">
+        <legend><span lang="ko">신청자</span><span lang="en">Applicant</span></legend>
+        <div class="grid-2">
+          <label class="field"><span lang="ko">이름</span><span lang="en">Name</span><input name="name" required maxlength="50" autocomplete="name"></label>
+          <label class="field"><span lang="ko">직위·과정</span><span lang="en">Position or program</span><input name="position" maxlength="50"><small><span lang="ko">예: 교수, 연구원, 대학원생</span><span lang="en">e.g. professor, researcher, graduate student</span></small></label>
+          <label class="field"><span lang="ko">소속</span><span lang="en">Affiliation</span><input name="dept" required maxlength="100"></label>
+          <label class="field"><span lang="ko">연락처</span><span lang="en">Phone</span><input name="phone" type="tel" required maxlength="30" autocomplete="tel"></label>
+          <label class="field"><span lang="ko">이메일</span><span lang="en">Email</span><input name="email" type="email" required maxlength="200" autocomplete="email"></label>
         </div>
-      </form>
-    </div>
+      </fieldset>
+
+      <fieldset class="field-group">
+        <legend><span lang="ko">세부 내용</span><span lang="en">Details</span></legend>
+        <div id="detailFields"></div>
+        <label class="field" id="amountField"><span lang="ko">신청 금액 (원)</span><span lang="en">Amount requested (KRW)</span><input name="amount" inputmode="numeric" maxlength="15"></label>
+        <label class="field"><span lang="ko">하고 싶은 말</span><span lang="en">Comments</span><textarea name="memo" rows="3" maxlength="2000"></textarea></label>
+      </fieldset>
+
+      <fieldset class="field-group">
+        <legend><span lang="ko">증빙 파일</span><span lang="en">Supporting files</span></legend>
+        <input name="files" type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.hwp,.hwpx,.doc,.docx,.xls,.xlsx,.ppt,.pptx" aria-label="Files">
+        <p class="hint"><span id="fileHint"></span><br><span lang="ko">PDF·사진·한글·워드·엑셀 파일을 5개까지, 한 개에 20MB까지 올릴 수 있어요.</span><span lang="en">Up to 5 files (PDF, images, HWP, Word, Excel), 20 MB each.</span></p>
+      </fieldset>
+
+      <label class="check"><input name="consent" type="checkbox" required> <span lang="ko">신청 처리를 위해 이름·소속·연락처·이메일을 모으고 쓰는 데 동의해요.</span><span lang="en">I agree to the collection and use of my name, affiliation, phone number and email address to process this application.</span></label>
+
+      <div class="apply-actions">
+        <button class="btn primary" type="submit" id="submitBtn"><span lang="ko">제출하기</span><span lang="en">Submit</span></button>
+        <p class="form-msg" id="applyMsg" role="status"></p>
+      </div>
+    </form>
   </div>
 </main>
 

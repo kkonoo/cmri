@@ -597,9 +597,8 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--orange); outlin
 .apply-box + .apply-box { margin-top: 20px; }
 .apply-box h2 { margin: 0 0 6px; font-size: 21px; letter-spacing: -.015em; }
 .apply-box .msg { margin: 0; color: var(--muted); }
-.apply-account { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 24px; font-size: 14.5px; color: var(--muted); }
-.text-btn { padding: 0; border: 0; background: none; color: var(--accent); font: inherit; font-weight: 600; cursor: pointer; }
 .apply-form .hint { margin: 6px 0 0; font-size: 14px; color: var(--muted); }
+.apply-form h2 + .hint { margin-bottom: 20px; }
 .apply-form .field-group { margin: 28px 0 0; padding: 24px 0 0; border: 0; border-top: 1px solid var(--line); min-width: 0; }
 .apply-form .field-group > legend { float: left; width: 100%; margin: 0 0 16px; padding: 0; font-size: 16px; font-weight: 800; }
 .apply-form .field-group > legend + * { clear: both; }
@@ -614,8 +613,6 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--orange); outlin
 .apply-form input:focus, .apply-form textarea:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
 .apply-form input[type="file"] { max-width: 100%; font: inherit; font-size: 14.5px; }
 .apply-form .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
-.apply-form .inline { display: flex; gap: 8px; margin-top: 16px; }
-.apply-form .inline input { flex: 1; }
 .apply-form .check { display: flex; align-items: flex-start; gap: 8px; margin: 4px 0 16px; font-size: 14.5px; cursor: pointer; }
 .apply-form .check input { flex: none; margin-top: 4px; }
 .apply-form .btn { border: 0; font: inherit; font-weight: 700; cursor: pointer; }
@@ -634,16 +631,6 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--orange); outlin
 .form-msg.bad { color: var(--bad); }
 .apply-form .form-msg { margin-top: 12px; }
 .apply-actions .form-msg { margin-top: 0; }
-.my-apps { margin-bottom: 36px; }
-.my-app-list { list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--text); }
-.my-app-list li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px 16px; align-items: center; padding: 14px 4px; border-bottom: 1px solid var(--line); }
-.my-app-list li.empty { display: block; color: var(--muted); }
-.my-app-list .when { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.my-app-list .what { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.my-app-list .what b { margin-right: 8px; }
-.my-app-list .note { grid-column: 2 / -1; margin: 0; font-size: 14px; color: var(--muted); white-space: pre-wrap; }
-.tag.state-approved { color: var(--good); background: color-mix(in srgb, var(--good) 14%, transparent); }
-.tag.state-rejected { color: var(--bad); background: var(--bad-soft); }
 
 /* ---------- 반응형 ---------- */
 @media (max-width: 1080px) {
@@ -739,7 +726,4 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--orange); outlin
   .contact-list div { grid-template-columns: 1fr; gap: 0; }
   .apply-box { padding: 22px 18px; }
   .apply-form .grid-2 { grid-template-columns: 1fr; }
-  .apply-form .inline { flex-direction: column; }
-  .my-app-list li { grid-template-columns: minmax(0, 1fr) auto; }
-  .my-app-list .when, .my-app-list .note { grid-column: 1 / -1; }
 }

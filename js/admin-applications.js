@@ -25,8 +25,6 @@ function resultMessage(a, status, note) {
     `${day(a.createdAt)}에 ${t.group === 'achievement' ? '제출하신' : '신청하신'} ${t.ko}${what ? ` (${what})` : ''} 건이 ${VERB[t.group][status]}.`,
     note ? `\n${note}` : null,
     '',
-    `신청·제출 내역: ${new URL('apply.html', location.href).href}`,
-    '',
     '--',
     SIGNATURE,
   ].filter(x => x != null).join('\n');
@@ -47,8 +45,9 @@ export function initApplications({ db, fs, email, toast }) {
   let apps = [];
   let current = null;
 
-  // 신청자가 올린 경로가 자기 폴더인지 확인해요
-  const ownPath = (a, f) => typeof f?.path === 'string' && f.path.startsWith(`applications/${a.uid}/${a.id}/`);
+  // 신청서에 적힌 경로가 그 신청의 폴더인지 확인해요 (uid가 있으면 학교 메일 로그인으로 받던 때의 신청)
+  const ownPath = (a, f) => typeof f?.path === 'string'
+    && f.path.startsWith(a.uid ? `applications/${a.uid}/${a.id}/` : `applications/${a.id}/`);
 
   async function load() {
     try {
