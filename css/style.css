@@ -344,7 +344,12 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--orange); outlin
   display: flex; flex-direction: column; gap: 14px; min-height: 210px; padding: 24px 22px;
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
   text-decoration: none; transition: border-color .15s, transform .15s, box-shadow .15s;
+  overflow: hidden;
 }
+/* 카드 위쪽 사진 (사진이 없으면 로고) */
+.news-thumb { display: block; min-height: 0; overflow: hidden; margin: -24px -22px 0; aspect-ratio: 3 / 2; background: var(--surface-2); border-bottom: 1px solid var(--line); }
+.news-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 30%; }
+.news-thumb .logo { object-fit: contain; padding: 18% 26%; opacity: .55; }
 .news-card .tag { align-self: flex-start; }
 .news-card h3 { flex: 1; margin: 0; font-size: 17px; font-weight: 600; line-height: 1.5; letter-spacing: -.01em; }
 .news-card time { font-size: 13.5px; color: var(--faint); }
@@ -686,8 +691,14 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--orange); outlin
   .hero { padding: 48px 0 24px; }
   .hero-art { width: 100%; opacity: .5; }
   .stats b { font-size: 24px; }
-  .program-grid, .news-grid { grid-template-columns: 1fr; }
-  .news-card { min-height: 0; }
+  .program-grid { grid-template-columns: 1fr; }
+  /* 휴대폰: 소식 카드는 한 줄로 두고 옆으로 밀어 봐요 */
+  .news-grid {
+    grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 78%; gap: 14px;
+    overflow-x: auto; scroll-snap-type: x mandatory; overscroll-behavior-x: contain;
+    margin-inline: -16px; padding: 4px 16px 12px; scroll-padding-inline: 16px;
+  }
+  .news-card { min-height: 0; scroll-snap-align: start; }
   .post-list a { flex-wrap: wrap; row-gap: 6px; }
   .post-list .title { order: 3; flex-basis: 100%; white-space: normal; }
   .post-list time { margin-left: auto; }

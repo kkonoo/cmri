@@ -1,11 +1,10 @@
 // 게시판 목록(board.html)과 글 보기(post.html)
 import {
   enabled, BOARDS, boardType, listPosts, pinnedPosts, getPost, MSG, bi,
-  postItem, seminarItem, letterCard, esc, dotDate, weekdayBi, renderBody, safeUrl,
+  postItem, seminarItem, letterCard, esc, dotDate, weekdayBi, renderBody, safeUrl, IMAGE, isImage,
 } from './posts.js';
 
 const PAGE = 20;
-const IMAGE = /\.(jpe?g|png|gif|webp)$/i;
 const params = new URLSearchParams(location.search);
 const type = boardType(params.get('type'));
 const label = BOARDS[type];
@@ -86,7 +85,6 @@ async function showPost() {
     : [[bi('작성일', 'Date'), dotDate(p.date)]];
   const links = (p.links || []).filter(l => safeUrl(l.url));
   // 사진 첨부는 본문 위에 그림으로 보여 줘요 (옛 홈페이지 소식 사진, 세미나 포스터 등)
-  const isImage = l => IMAGE.test(l.label || '') || IMAGE.test(new URL(l.url).pathname);
   const photos = links.filter(isImage);
   const files = links.filter(l => !isImage(l));
   main.innerHTML = `<article class="article">

@@ -38,6 +38,9 @@ export function today() {
 }
 const isNew = d => Date.now() - new Date(d + 'T00:00:00') < 7 * 864e5;
 export const safeUrl = u => (/^https?:\/\//i.test(u || '') ? u : null);
+// 첨부 링크가 사진인지: 이름이나 주소가 사진 확장자로 끝나면 (주소는 safeUrl을 거친 것)
+export const IMAGE = /\.(jpe?g|png|gif|webp)$/i;
+export const isImage = l => IMAGE.test(l.label || '') || IMAGE.test(new URL(l.url).pathname);
 export const postUrl = (type, id) => `post.html?type=${type}&id=${encodeURIComponent(id)}`;
 
 // 줄바꿈은 그대로, 빈 줄은 문단, 주소는 링크로
@@ -73,8 +76,11 @@ export function seminarItem(p, withTitle = false) {
   </a></li>`;
 }
 
+// 소식 카드: 첫 사진을 위에 보여 주고, 사진이 없으면 로고를 넣어요
 export function newsCard(p) {
+  const photo = (p.links || []).find(l => safeUrl(l.url) && isImage(l));
   return `<a class="news-card" href="${postUrl('news', p.id)}">
+    <span class="news-thumb">${photo ? `<img src="${esc(photo.url)}" alt="" loading="lazy">` : '<img class="logo" src="img/logo-mark.png" alt="">'}</span>
     ${tag(p.category)}<h3>${esc(p.title)}</h3><time datetime="${p.date}">${dotDate(p.date)}</time>
   </a>`;
 }
