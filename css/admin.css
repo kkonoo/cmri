@@ -45,6 +45,14 @@ body.admin { background: var(--surface-2); min-height: 100vh; }
 .table .c-photo { width: 64px; padding-block: 8px; }
 .table .faculty-photo { width: 30px; height: 40px; border-radius: 6px; font-size: 14px; }
 .table .msg { padding: 32px; text-align: center; }
+.pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; font-size: 14.5px; }
+.pager-count { color: var(--muted); }
+.pager-pages { display: flex; flex-wrap: wrap; gap: 4px; }
+.pager-pages button { min-width: 36px; height: 36px; padding: 0 8px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--text); font: inherit; cursor: pointer; }
+.pager-pages button.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 700; }
+.pager-pages button:disabled { opacity: .4; cursor: default; }
+.pager-pages span { align-self: center; padding: 0 4px; color: var(--faint); }
+.pager select { height: 36px; padding: 0 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--text); font: inherit; font-size: 14.5px; }
 .table .sub { display: block; font-size: 13px; color: var(--muted); }
 .chip { display: inline-block; padding: 1px 9px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 12.5px; font-weight: 600; }
 
