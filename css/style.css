@@ -443,8 +443,10 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--orange); outlin
 .subnav { position: sticky; top: 72px; z-index: 40; background: var(--header-bg); border-bottom: 1px solid var(--line); }
 .subnav .wrap { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; }
 .subnav .wrap::-webkit-scrollbar { display: none; }
+/* 본문 너비 안에서 같은 너비로 나눠요. 다 안 들어가는 좁은 화면에서는 옆으로 밀어요 */
 .subnav a {
-  flex: none; padding: 15px 14px 13px; margin-bottom: -1px;
+  flex: 1 0 0; min-width: max-content; text-align: center;
+  padding: 15px 14px 13px; margin-bottom: -1px;
   border-bottom: 2px solid transparent;
   font-size: 15px; font-weight: 600; color: var(--muted); text-decoration: none;
 }
