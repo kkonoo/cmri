@@ -435,7 +435,8 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--orange); outlin
 .page-head.plain h1 { margin-bottom: 12px; }
 .page-head .desc { max-width: 40em; margin: 0; color: rgba(255, 255, 255, .75); font-size: 17px; }
 .tabs { display: flex; gap: 4px; overflow-x: auto; }
-.tabs a { flex: none; padding: 12px 20px; border-radius: 10px 10px 0 0; color: rgba(255, 255, 255, .72); font-weight: 600; text-decoration: none; }
+/* 게시판 탭도 본문 너비를 같은 칸으로 나눠요 (좁은 화면에서는 옆으로 밀어요) */
+.tabs a { flex: 1 0 0; min-width: max-content; text-align: center; padding: 12px 20px; border-radius: 10px 10px 0 0; color: rgba(255, 255, 255, .72); font-weight: 600; text-decoration: none; }
 .tabs a:hover { color: #fff; }
 .tabs a.on { background: var(--bg); color: var(--text); }
 

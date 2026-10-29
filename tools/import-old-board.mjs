@@ -20,6 +20,8 @@ const MAX_MB = Number(option('--max-mb', 500));
 const CACHE = join(HERE, '.old-board');
 const BUCKET = 'cmri-knumed.firebasestorage.app';   // js/firebase-config.js의 storageBucket
 const MAX_LINKS = 10;                               // firestore.rules와 같게
+// 포스터를 보고 채운 세미나 정보(주제·연사·소속·시간·장소, 두 사람이면 본문). 옛 글에서 뽑은 것보다 이것을 써요
+const POSTERS = JSON.parse(readFileSync(join(HERE, 'seminar-posters.json'), 'utf8'));
 
 // 옛 게시판(db) → 새 컬렉션. 공지 가운데 [세미나 공지]는 seminars로 가요
 const BOARDS = [
@@ -362,7 +364,7 @@ async function preparePost(board, oldId, pinned) {
   let data = { title: read.title, category: '', date: read.date, body: read.text, pinned: false };
   if (board.db === 'notice' && SEMINAR.test(read.title)) {
     collection = 'seminars';
-    data = { ...data, ...seminar(read.title, read.text, read.date) };
+    data = { ...data, ...seminar(read.title, read.text, read.date), ...POSTERS[id] };
   } else {
     data = { ...data, ...categorize(collection, read.title), pinned: collection === 'notices' && pinned };
   }
