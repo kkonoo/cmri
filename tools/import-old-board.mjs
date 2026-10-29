@@ -423,7 +423,7 @@ async function upload(posts) {
     });
     process.stdout.write(`\r올리는 중 ${++done + skipped}/${posts.length}`);
   });
-  console.log(`\n다 올렸어요. 글 ${done}개${skipped ? `, 이미 있어서 건너뛴 글 ${skipped}개` : ''}.`);
+  console.log(`\n올렸어요. 글 ${done}개${skipped ? `, 이미 있어서 건너뛴 글 ${skipped}개` : ''}.`);
 }
 
 // ── 실행 ──
@@ -452,12 +452,21 @@ function summary(posts) {
 async function main() {
   mkdirSync(CACHE, { recursive: true });
   const posts = [];
+  // 받을 양을 다 받았거나 옛 서버가 막으면, 그때까지 다 받은 글만 정리(·올리기)하고 나머지는 다음에 받아요
+  let stopped = null;
+  const stop = err => {
+    if (!(err instanceof Stop)) throw err;
+    stopped ??= err;
+    return null;
+  };
   for (const board of BOARDS) {
-    const ids = await listPosts(board);
+    const ids = await listPosts(board).catch(stop);
+    if (stopped) break;
     let done = 0;
     const prepared = await mapLimit([...ids], 2, async ([oldId, pinned]) => {
+      if (stopped) return null;
       const post = await preparePost(board, oldId, pinned).catch(err => {
-        if (err instanceof Stop) throw err;
+        if (err instanceof Stop) return stop(err);
         warn(`old-${oldId}`, err.message);
         return null;
       });
@@ -466,6 +475,12 @@ async function main() {
     });
     console.log();
     posts.push(...prepared.filter(Boolean));
+    if (stopped) break;
+  }
+  if (stopped) {
+    console.log(`\n${stopped.message}
+다 받은 글까지만 정리했어요. 다음 날 다시 돌리면 나머지를 이어서 받아요.
+(옛 서버가 막혔으면 브라우저로 http://cmri.knu.ac.kr 이 열릴 때 다시 돌려요. 해외 인터넷이면 국내 인터넷에서 돌려야 해요.)`);
   }
   writeFileSync(join(CACHE, 'preview.json'), JSON.stringify(posts.map(p => ({
     ...p, files: p.files.map(f => ({ label: f.label, ...(f.path ? { file: relative(CACHE, f.path) } : { url: f.url }) })),
@@ -486,12 +501,6 @@ function saveWarnings() {
 
 main().catch(err => {
   console.error(`\n${err.message}`);
-  if (err instanceof Stop) {
-    console.error(`Firebase에는 아무것도 올리지 않았어요. 이번에 옛 서버에서 받은 양: ${(downloaded / 1e6).toFixed(1)}MB
-- 받아 둔 글과 파일은 tools/.old-board/에 있어서, 다시 돌리면 못 받은 것만 이어서 받아요.
-- 옛 서버가 막혔으면 브라우저로 http://cmri.knu.ac.kr 이 열릴 때(트래픽 초과는 보통 다음 날) 다시 돌려요.
-- 해외 인터넷에서 돌렸다면 학교·집 같은 국내 인터넷에서 돌려야 해요.`);
-  }
   saveWarnings();
   process.exit(1);
 });
