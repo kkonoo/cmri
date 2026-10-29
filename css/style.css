@@ -32,6 +32,9 @@
   --bad: #D93036;
   --bad-soft: #FDECEC;
   --seg: #E8ECF2;
+  /* 공지·소식 분류 표시 색 (작은 글씨라 옅은 바탕에서 4.5:1 넘게) */
+  --cat-gray: #566070; --cat-amber: #8F5200; --cat-green: #126A42;
+  --cat-teal: #086575; --cat-purple: #7346C4; --cat-red: #B5262C;
   --radius: 16px;
   color-scheme: only light;   /* only = 삼성 인터넷이 강제로 어둡게 바꾸지 않게 */
 }
@@ -47,6 +50,7 @@
     --logo-tile: #FFFFFF;
     --glass: rgba(255, 255, 255, .04); --popup-shadow: 0 12px 32px rgba(0, 0, 0, .5); --shadow: none;
     --good: #4CC98A; --warn: #F2B544; --bad: #FF6B6F; --bad-soft: #3A1A1C; --seg: #1C2433;
+    --cat-gray: #8F9AAD; --cat-amber: #F5B65C; --cat-green: #4CC98A; --cat-teal: #4CC3D0; --cat-purple: #B596F5; --cat-red: #FF7A7E;
     color-scheme: only dark;
   }
 }
@@ -59,6 +63,7 @@
   --logo-tile: #FFFFFF;
   --glass: rgba(255, 255, 255, .04); --popup-shadow: 0 12px 32px rgba(0, 0, 0, .5); --shadow: none;
   --good: #4CC98A; --warn: #F2B544; --bad: #FF6B6F; --bad-soft: #3A1A1C; --seg: #1C2433;
+  --cat-gray: #8F9AAD; --cat-amber: #F5B65C; --cat-green: #4CC98A; --cat-teal: #4CC3D0; --cat-purple: #B596F5; --cat-red: #FF7A7E;
   color-scheme: only dark;
 }
 
@@ -167,6 +172,14 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--orange); outlin
   padding: 2px 9px; border-radius: 6px;
 }
 .tag.alt { color: var(--orange-text); background: var(--orange-soft); }
+/* 공지·소식 분류는 분류마다 색이 달라요 (목록에 없는 분류는 기본 파랑) */
+.tag[data-cat] { color: var(--cat, var(--accent)); background: color-mix(in srgb, var(--cat, var(--accent)) 12%, transparent); }
+.tag[data-cat="공지"] { --cat: var(--cat-gray); }
+.tag[data-cat="모집"], .tag[data-cat="동정"] { --cat: var(--cat-green); }
+.tag[data-cat="채용"] { --cat: var(--cat-teal); }
+.tag[data-cat="행사"] { --cat: var(--cat-purple); }
+.tag[data-cat="수상"] { --cat: var(--cat-amber); }
+.tag[data-cat="규정"] { --cat: var(--cat-red); }
 .more { font-size: 14.5px; font-weight: 600; color: var(--muted); text-decoration: none; white-space: nowrap; }
 .more::after { content: " ›"; }
 .head-links { display: flex; gap: 18px; }
@@ -214,6 +227,7 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--orange); outlin
 
 /* ---------- 공지·세미나 ---------- */
 .board-grid { display: grid; grid-template-columns: 1.55fr 1fr; gap: 40px; }
+.board-grid > * { min-width: 0; }   /* 긴 공지 제목이 칸을 넓히지 않게 (말줄임) */
 .panel-head { display: flex; align-items: center; justify-content: space-between; padding-bottom: 16px; border-bottom: 2px solid var(--text); }
 
 .post-list, .seminar-list { list-style: none; margin: 0; padding: 0; }
@@ -455,6 +469,8 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--orange); outlin
 .article-meta div { display: flex; gap: 8px; }
 .article-meta dt { color: var(--muted); }
 .article-meta dd { margin: 0; font-weight: 600; }
+.article-photos { display: grid; justify-items: start; gap: 12px; margin: 0 0 28px; }
+.article-photos img { display: block; max-width: 100%; height: auto; border-radius: 10px; }
 .article-body p { margin: 0 0 1.1em; font-size: 16.5px; line-height: 1.85; color: var(--body); }
 .article-body a { color: var(--accent); word-break: break-all; }
 .attach { list-style: none; margin: 32px 0 0; padding: 18px 22px; border-radius: 12px; background: var(--surface-2); }

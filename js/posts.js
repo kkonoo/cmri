@@ -49,13 +49,14 @@ export function renderBody(text) {
   ).join('');
 }
 
+// 분류마다 색이 달라요 (css/style.css의 .tag[data-cat])
 function tag(category) {
-  return category ? `<span class="tag${category === '동정' ? ' alt' : ''}">${esc(category)}</span>` : '';
+  return category ? `<span class="tag" data-cat="${esc(category)}">${esc(category)}</span>` : '';
 }
 
 export function postItem(type, p, pinnedRow = false) {
   return `<li${pinnedRow ? ' class="pinned"' : ''}><a href="${postUrl(type, p.id)}">
-    ${pinnedRow ? `<span class="tag pin">${bi('고정', 'Pinned')}</span>` : ''}${tag(p.category)}
+    ${tag(p.category)}
     <span class="title">${esc(p.title)}</span>
     ${isNew(p.date) ? '<span class="badge-new" aria-label="New">N</span>' : ''}
     <time datetime="${p.date}">${dotDate(p.date)}</time>

@@ -5,6 +5,7 @@ import {
 } from './posts.js';
 
 const PAGE = 20;
+const IMAGE = /\.(jpe?g|png|gif|webp)$/i;
 const params = new URLSearchParams(location.search);
 const type = boardType(params.get('type'));
 const label = BOARDS[type];
@@ -84,12 +85,17 @@ async function showPost() {
        [bi('장소', 'Venue'), esc(p.place || '')]]
     : [[bi('작성일', 'Date'), dotDate(p.date)]];
   const links = (p.links || []).filter(l => safeUrl(l.url));
+  // 사진 첨부는 본문 위에 그림으로 보여 줘요 (옛 홈페이지 소식 사진, 세미나 포스터 등)
+  const isImage = l => IMAGE.test(l.label || '') || IMAGE.test(new URL(l.url).pathname);
+  const photos = links.filter(isImage);
+  const files = links.filter(l => !isImage(l));
   main.innerHTML = `<article class="article">
-    <p class="article-cat"><a href="board.html?type=${type}">${bi(label.ko, label.en)}</a>${p.category ? `<span class="tag">${esc(p.category)}</span>` : ''}</p>
+    <p class="article-cat"><a href="board.html?type=${type}">${bi(label.ko, label.en)}</a>${p.category ? `<span class="tag" data-cat="${esc(p.category)}">${esc(p.category)}</span>` : ''}</p>
     <h1>${esc(p.title)}</h1>
     <dl class="article-meta">${meta.filter(([, v]) => v).map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>
+    ${photos.length ? `<div class="article-photos">${photos.map(l => `<a href="${esc(l.url)}" target="_blank" rel="noopener"><img src="${esc(l.url)}" alt="${esc((l.label || '').replace(IMAGE, ''))}" loading="lazy"></a>`).join('')}</div>` : ''}
     <div class="article-body">${renderBody(p.body)}</div>
-    ${links.length ? `<ul class="attach">${links.map(l => `<li><a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label || l.url)}</a></li>`).join('')}</ul>` : ''}
+    ${files.length ? `<ul class="attach">${files.map(l => `<li><a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label || l.url)}</a></li>`).join('')}</ul>` : ''}
     ${backBtn}
   </article>`;
 }
