@@ -421,9 +421,12 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--orange); outlin
 .footer-inner { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 24px 32px; }
 .footer-name { margin: 0 0 10px; font-size: 16px; font-weight: 700; color: #fff; }
 .site-footer address { font-style: normal; line-height: 1.8; }
-.family { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px; list-style: none; margin: 0; padding: 0; }
-.family a { display: block; padding: 7px 14px; border: 1px solid rgba(255, 255, 255, .2); border-radius: 999px; font-size: 13.5px; text-decoration: none; }
-.family a:hover { background: rgba(255, 255, 255, .08); }
+.family { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 0; list-style: none; margin: 0; padding: 0; }
+.family li + li { border-left: 1px solid rgba(255, 255, 255, .2); }
+.family a { display: block; padding: 2px 22px; opacity: .8; transition: opacity .15s; }
+.family li:first-child a { padding-left: 0; }
+.family a:hover { opacity: 1; }
+.family img { display: block; width: auto; }
 .copyright { position: relative; margin-top: 32px; padding-top: 20px; font-size: 13px; color: rgba(255, 255, 255, .45); }
 .copyright::before { content: ""; position: absolute; top: 0; left: 24px; right: 24px; border-top: 1px solid rgba(255, 255, 255, .1); }
 
@@ -726,4 +729,7 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--orange); outlin
   .contact-list div { grid-template-columns: 1fr; gap: 0; }
   .apply-box { padding: 22px 18px; }
   .apply-form .grid-2 { grid-template-columns: 1fr; }
+  .family { gap: 18px 28px; }
+  .family li + li { border-left: 0; }
+  .family a { padding: 0; }
 }
