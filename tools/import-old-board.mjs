@@ -20,10 +20,11 @@ const MAX_MB = Number(option('--max-mb', 500));
 const CACHE = join(HERE, '.old-board');
 const BUCKET = 'cmri-knumed.firebasestorage.app';   // js/firebase-config.js의 storageBucket
 const MAX_LINKS = 10;                               // firestore.rules와 같게
-// 포스터를 보고 채운 세미나 정보(주제·연사·소속·시간·장소, 두 사람이면 본문). 옛 글에서 뽑은 것보다 이것을 써요
+// 포스터와 본문을 보고 채운 세미나 정보(주제·연사·소속·날짜·시간·장소·본문). 옛 글에서 뽑은 것보다 이것을 써요.
+// 여기 있는 공지는 머리말이 없어도 세미나로 옮기고, { same: 다른 글 }은 같은 세미나를 다시 알린 글이라 옮기지 않아요
 const POSTERS = JSON.parse(readFileSync(join(HERE, 'seminar-posters.json'), 'utf8'));
 
-// 옛 게시판(db) → 새 컬렉션. 공지 가운데 [세미나 공지]는 seminars로 가요
+// 옛 게시판(db) → 새 컬렉션. 공지 가운데 [세미나 공지]와 seminar-posters.json에 있는 글은 seminars로 가요
 const BOARDS = [
   { db: 'notice', page: 'sub01_1', collection: 'notices', label: '공지' },
   { db: 'gallery', page: 'sub01_2', collection: 'news', label: '소식' },
@@ -348,6 +349,8 @@ async function newsletterFiles(id, read, referer, title) {
 
 async function preparePost(board, oldId, pinned) {
   const id = `old-${oldId}`;
+  const fix = board.db === 'notice' ? POSTERS[id] : undefined;
+  if (fix?.same) return { id, collection: 'notices', remove: fix.same, data: {}, files: [] };
   const url = `${SITE}/html/${board.page}.html?id=${oldId}&type=read&db=${board.db}`;
   const pagePath = cachePath('pages', `${board.db}-${oldId}.html`);
   let html = existsSync(pagePath) ? readFileSync(pagePath, 'utf8') : '';
@@ -362,9 +365,9 @@ async function preparePost(board, oldId, pinned) {
   }
   let collection = board.collection;
   let data = { title: read.title, category: '', date: read.date, body: read.text, pinned: false };
-  if (board.db === 'notice' && SEMINAR.test(read.title)) {
+  if (board.db === 'notice' && (SEMINAR.test(read.title) || fix)) {
     collection = 'seminars';
-    data = { ...data, ...seminar(read.title, read.text, read.date), ...POSTERS[id] };
+    data = { ...data, ...seminar(read.title, read.text, read.date), ...fix };
   } else {
     data = { ...data, ...categorize(collection, read.title), pinned: collection === 'notices' && pinned };
   }
@@ -416,7 +419,13 @@ async function upload(posts) {
   }
   let done = 0;
   let skipped = 0;
+  let removed = 0;
   await mapLimit(posts, 4, async post => {
+    if (post.remove) {   // 같은 세미나를 다시 알린 공지: 지난번에 공지로 올렸으면 지워요
+      await db.collection('notices').doc(post.id).delete();
+      removed++;
+      return;
+    }
     if (existing.has(`${post.collection}|${post.data.date}|${post.data.title}`)) {
       skipped++;
       warn(post.id, `새 사이트에 이미 있는 글이라 건너뛰었어요: ${post.data.title}`);
@@ -429,9 +438,11 @@ async function upload(posts) {
     await db.collection(post.collection).doc(post.id).set({
       ...post.data, links, updatedAt: FieldValue.serverTimestamp(), updatedBy: 'cmri.knu.ac.kr에서 옮김',
     });
-    process.stdout.write(`\r올리는 중 ${++done + skipped}/${posts.length}`);
+    // 세미나는 모두 옛 공지에서 와요. 지난번에 공지로 올렸으면 공지사항에서는 지워요
+    if (post.collection === 'seminars') await db.collection('notices').doc(post.id).delete();
+    process.stdout.write(`\r올리는 중 ${++done + skipped + removed}/${posts.length}`);
   });
-  console.log(`\n올렸어요. 글 ${done}개${skipped ? `, 이미 있어서 건너뛴 글 ${skipped}개` : ''}.`);
+  console.log(`\n올렸어요. 글 ${done}개${skipped ? `, 이미 있어서 건너뛴 글 ${skipped}개` : ''}${removed ? `, 같은 세미나라 뺀 공지 ${removed}개` : ''}.`);
 }
 
 // ── 실행 ──
@@ -441,7 +452,7 @@ const NAMES = { notices: '공지사항', seminars: '세미나', news: '연구소
 function summary(posts) {
   console.log('\n옮길 글');
   for (const [collection, name] of Object.entries(NAMES)) {
-    const list = posts.filter(p => p.collection === collection);
+    const list = posts.filter(p => p.collection === collection && !p.remove);
     if (!list.length) continue;
     const tally = new Map();
     list.forEach(p => tally.set(p.data.category || '분류 없음', (tally.get(p.data.category || '분류 없음') || 0) + 1));
@@ -452,6 +463,8 @@ function summary(posts) {
     const pinned = list.filter(p => p.data.pinned).length;
     console.log(`  ${name} ${list.length}개${detail ? ` — ${detail}` : ''}${pinned ? ` (고정 ${pinned})` : ''}`);
   }
+  const removed = posts.filter(p => p.remove).length;
+  if (removed) console.log(`  같은 세미나를 다시 알린 공지 ${removed}개는 옮기지 않아요`);
   const files = posts.flatMap(p => p.files.filter(f => f.path));
   const mb = files.reduce((n, f) => n + statSync(f.path).size, 0) / 1e6;
   console.log(`  파일 ${files.length}개, 모두 ${mb.toFixed(1)}MB`);
